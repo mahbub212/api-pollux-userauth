@@ -1,12 +1,12 @@
 spring:
   profiles:
-    active: "uatprod"
+    active: "prod"
   application:
     name: api-pollux-userauth
   datasource:
-    url: jdbc:oracle:thin:@128.21.23.31:1521:AJSDB
-    username: URSADEV
-    password: kjZCbFRD
+    url: jdbc:oracle:thin:@128.21.22.31:1526:ajsdb
+    username: dev
+    password: linkdev
     driver-class-name: oracle.jdbc.driver.OracleDriver
     hikari:
       auto-commit: true
