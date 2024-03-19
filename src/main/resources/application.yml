@@ -4,7 +4,7 @@ spring:
   application:
     name: api-pollux-userauth
   datasource:
-    url: jdbc:oracle:thin:@128.21.22.31:1526:ajsdb
+    url: jdbc:oracle:thin:@128.21.22.31:1530:ajsdb
     username: dev
     password: linkdev
     driver-class-name: oracle.jdbc.driver.OracleDriver
