@@ -16,8 +16,8 @@ pipeline {
         PIPELINE_NAME_SPACE = "pollux"
         PIPELINE_REPLICA = 2
         PIPELINE_LOAD_BALANCER_PORT=9092
-	PIPELINE_EUREKA_SERVICE_ADDRESS = "http://eureka-0.eureka.cosmos.svc.cluster.local:8080/eureka,http://eureka-1.eureka.cosmos.svc.cluster.local:8080/eureka,http://eureka-2.eureka.cosmos.svc.cluster.local:8080/eureka,http://eureka-3.eureka.cosmos.svc.cluster.local:8080/eureka,http://eureka-4.eureka.cosmos.svc.cluster.local:8080/eureka,http://eureka-5.eureka.cosmos.svc.cluster.local:8080/eureka"
-	PIPELINE_IMAGE = "172.16.0.72:8443/${env.PIPELINE_NAME_SPACE}/${env.PIPELINE_BUILD_IMAGE}:${env.BUILD_NUMBER}"
+	      PIPELINE_EUREKA_SERVICE_ADDRESS = "http://eureka-0.eureka.cosmos.svc.cluster.local:8080/eureka,http://eureka-1.eureka.cosmos.svc.cluster.local:8080/eureka,http://eureka-2.eureka.cosmos.svc.cluster.local:8080/eureka,http://eureka-3.eureka.cosmos.svc.cluster.local:8080/eureka,http://eureka-4.eureka.cosmos.svc.cluster.local:8080/eureka,http://eureka-5.eureka.cosmos.svc.cluster.local:8080/eureka"
+	      PIPELINE_IMAGE = "172.16.0.72:8443/${env.PIPELINE_NAME_SPACE}/${env.PIPELINE_BUILD_IMAGE}:${env.BUILD_NUMBER}"
         def server = ''
         def name_space = "${env.PIPELINE_NAME_SPACE}"
         def build_image = "${env.PIPELINE_BUILD_IMAGE}"
