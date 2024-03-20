@@ -1,10 +1,10 @@
 def getHost(){
     def remote = [:]
-    remote.name = 'master'
-    remote.host = '128.21.35.19'
+    remote.name = 'jenkins-prod'
+    remote.host = '172.16.0.71'
     remote.user = 'administrator'
     remote.port = 22
-    remote.password = 'Ajs123456'
+    remote.password = 'Msig123456'
     remote.allowAnyHosts = true
     return remote
 }
@@ -16,8 +16,8 @@ pipeline {
         PIPELINE_NAME_SPACE = "pollux"
         PIPELINE_REPLICA = 2
         PIPELINE_LOAD_BALANCER_PORT=9092
-        PIPELINE_EUREKA_SERVICE_ADDRESS = "http://eureka-0.eureka.cosmos.svc.cluster.local:8080/eureka,http://eureka-1.eureka.cosmos.svc.cluster.local:8080/eureka,http://eureka-2.eureka.cosmos.svc.cluster.local:8080/eureka,http://eureka-3.eureka.cosmos.svc.cluster.local:8080/eureka,http://eureka-4.eureka.cosmos.svc.cluster.local:8080/eureka,http://eureka-5.eureka.cosmos.svc.cluster.local:8080/eureka"
-        PIPELINE_IMAGE = "128.21.35.10:5000/${env.PIPELINE_NAME_SPACE}/${env.PIPELINE_BUILD_IMAGE}:${env.BUILD_NUMBER}"
+	PIPELINE_EUREKA_SERVICE_ADDRESS = "http://eureka-0.eureka.cosmos.svc.cluster.local:8080/eureka,http://eureka-1.eureka.cosmos.svc.cluster.local:8080/eureka,http://eureka-2.eureka.cosmos.svc.cluster.local:8080/eureka,http://eureka-3.eureka.cosmos.svc.cluster.local:8080/eureka,http://eureka-4.eureka.cosmos.svc.cluster.local:8080/eureka,http://eureka-5.eureka.cosmos.svc.cluster.local:8080/eureka"
+	PIPELINE_IMAGE = "172.16.0.72:8443/${env.PIPELINE_NAME_SPACE}/${env.PIPELINE_BUILD_IMAGE}:${env.BUILD_NUMBER}"
         def server = ''
         def name_space = "${env.PIPELINE_NAME_SPACE}"
         def build_image = "${env.PIPELINE_BUILD_IMAGE}"
@@ -29,7 +29,7 @@ pipeline {
                 script {                 
                    server = getHost()                                   
                 }
-                 git branch:'master', credentialsId: 'gitcredentialursa', url: 'http://gitlab-dev.sinarmasmsiglife.co.id:8888/pollux/api-pollux-userauth'
+                 git branch:'biznetgio1', credentialsId: 'biznetgio1', url: 'http://128.21.24.60:8888/pollux/api-pollux-userauth'
                
             }
         }
@@ -83,4 +83,9 @@ pipeline {
     }
     
 }
+post {
+      always {
+        discordSend description: 'Jenkins Pipeline Build', enableArtifactsList: true, footer: "Build ${JOB_NAME} #${BUILD_NUMBER}", image: '', link: env.BUILD_URL, result: currentBuild.currentResult, scmWebUrl: '', showChangeset: true, thumbnail: '', title: "${JOB_NAME} #${BUILD_NUMBER}", webhookURL: 'https://discord.com/api/webhooks/1167421282934079548/d2VMeAsU9Z1Qfm3aXvAKhOtisUh7_n3GRwB0hzXu33eUCFAsDobAaEQxMRgnXsbMREqT'
+      }
+    }
 }
