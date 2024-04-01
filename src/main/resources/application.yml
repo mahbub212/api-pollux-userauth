@@ -45,7 +45,7 @@ eureka:
 
 logging:
   level:
-    org.springframework: DEBUG
+    org.springframework: ERROR
 #    org.springframework.security: DEBUG
 feign:
   client:
