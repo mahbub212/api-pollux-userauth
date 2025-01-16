@@ -5,6 +5,8 @@ import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.Id;
 import javax.persistence.Table;
+
+import com.fasterxml.jackson.annotation.JsonFormat;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -53,12 +55,14 @@ public class User {
 	private String lusFullName;
 
 	@Column(name = "LUSS_ONLINE")
+	@JsonFormat(pattern="dd-MM-yyyy HH:mm:ss", timezone="Asia/Jakarta")
 	private Date lussOnline;
 	
 	@Column(name = "LUS_MINE")
 	private Integer lusMine;
 	
 	@Column(name = "LUS_CHANGE")
+	@JsonFormat(pattern="dd-MM-yyyy HH:mm:ss", timezone="Asia/Jakarta")
 	private Date lusChange;
 
 	@Column(name = "CAB_BANK")
@@ -107,6 +111,7 @@ public class User {
 	private String lusMsagId;
 	
 	@Column(name = "LUS_NON_ACTIVE")
+	@JsonFormat(pattern="dd-MM-yyyy HH:mm:ss", timezone="Asia/Jakarta")
 	private Date lusNonActive;
 	
 }

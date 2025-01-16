@@ -80,8 +80,8 @@ public class AuthUserService {
 	public LogoutUserResponse logout(LogoutUserRequest request) throws ParseException {
 		User user = userRepository.findByUsername(request.getUsername());
 		if(user != null) {
-			updateLusNonActive(user);
-			updateNullLussOnline(user);
+//			updateLusNonActive(user);
+//			updateNullLussOnline(user);
 			return createLogoutUserResponse(user);
 		} else {
 			return createLogoutUserErrorResponse(StaticValue.LOGIN_CODE_RESP_NOT_FOUND, StaticValue.LOGIN_MSG_RESP_NOT_FOUND);
