@@ -80,6 +80,7 @@ public class AuthUserService {
 	public LogoutUserResponse logout(LogoutUserRequest request) throws ParseException {
 		User user = userRepository.findByUsername(request.getUsername());
 		if(user != null) {
+			// commented for login lus active keep deactivating issue - 16-01-2025
 //			updateLusNonActive(user);
 //			updateNullLussOnline(user);
 			return createLogoutUserResponse(user);
