@@ -11,6 +11,7 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
+import javax.persistence.Query;
 import javax.sql.DataSource;
 import javax.persistence.EntityManager;
 import javax.persistence.PersistenceContext;
@@ -52,6 +53,7 @@ public class AuthUserService {
 	@Value("${custom.timeout.actual}")
 	private int actualTimeoutInSeconds;
 
+	@Transactional
 	public LoginUserResponse login(LoginUserRequest request) throws ParseException {
 		User user = userRepository.findByUsername(request.getUsername());
 		if (user != null) {
@@ -114,9 +116,14 @@ public class AuthUserService {
 	@Transactional
 	public void updateLussOnline(User user) {
 		try {
-			ZonedDateTime zonedDateTime = ZonedDateTime.now(ZoneId.of("Asia/Jakarta"));
-			user.setLussOnline(Date.from(zonedDateTime.toInstant()));
-			userRepository.save(user);
+//			ZonedDateTime zonedDateTime = ZonedDateTime.now(ZoneId.of("Asia/Jakarta"));
+//			user.setLussOnline(Date.from(zonedDateTime.toInstant()));
+//			userRepository.save(user);
+
+			String queryString = "UPDATE EKA.LST_USER SET LUSS_ONLINE = sysdate WHERE LUS_ID = :lusId";
+			Query query = entityManager.createNativeQuery(queryString);
+			query.setParameter("lusId", user.getUserId());
+			query.executeUpdate();
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
