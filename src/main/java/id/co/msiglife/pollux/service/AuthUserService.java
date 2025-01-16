@@ -5,6 +5,8 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.text.ParseException;
+import java.time.ZoneId;
+import java.time.ZonedDateTime;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
@@ -102,7 +104,8 @@ public class AuthUserService {
 	@Transactional
 	public void updateLusNonActive(User user) {
 		try {
-			user.setLusNonActive(new Date());
+			ZonedDateTime zonedDateTime = ZonedDateTime.now(ZoneId.of("Asia/Jakarta"));
+			user.setLusNonActive(Date.from(zonedDateTime.toInstant()));
 			userRepository.save(user);
 		} catch (Exception e) {
 			e.printStackTrace();
