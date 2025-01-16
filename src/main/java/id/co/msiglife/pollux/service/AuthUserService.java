@@ -116,14 +116,8 @@ public class AuthUserService {
 	@Transactional
 	public void updateLussOnline(User user) {
 		try {
-//			ZonedDateTime zonedDateTime = ZonedDateTime.now(ZoneId.of("Asia/Jakarta"));
-//			user.setLussOnline(Date.from(zonedDateTime.toInstant()));
-//			userRepository.save(user);
-
-			String queryString = "UPDATE EKA.LST_USER SET LUSS_ONLINE = sysdate WHERE LUS_ID = :lusId";
-			Query query = entityManager.createNativeQuery(queryString);
-			query.setParameter("lusId", user.getUserId());
-			query.executeUpdate();
+			user.setLussOnline(new Date());
+			userRepository.save(user);
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
