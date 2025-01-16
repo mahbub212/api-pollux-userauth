@@ -104,8 +104,7 @@ public class AuthUserService {
 	@Transactional
 	public void updateLusNonActive(User user) {
 		try {
-			ZonedDateTime zonedDateTime = ZonedDateTime.now(ZoneId.of("Asia/Jakarta"));
-			user.setLusNonActive(Date.from(zonedDateTime.toInstant()));
+			user.setLusNonActive(new Date());
 			userRepository.save(user);
 		} catch (Exception e) {
 			e.printStackTrace();
@@ -115,7 +114,8 @@ public class AuthUserService {
 	@Transactional
 	public void updateLussOnline(User user) {
 		try {
-			user.setLussOnline(new Date());
+			ZonedDateTime zonedDateTime = ZonedDateTime.now(ZoneId.of("Asia/Jakarta"));
+			user.setLussOnline(Date.from(zonedDateTime.toInstant()));
 			userRepository.save(user);
 		} catch (Exception e) {
 			e.printStackTrace();
