@@ -15,7 +15,7 @@ pipeline {
         PIPELINE_BUILD_IMAGE = "api-pollux-userauth"
         PIPELINE_NAME_SPACE = "pollux"
         PIPELINE_REPLICA = 2
-        PIPELINE_LOAD_BALANCER_PORT=9092
+        PIPELINE_LOAD_BALANCER_PORT=9091
         PIPELINE_EUREKA_SERVICE_ADDRESS = "http://eureka-0.eureka.cosmos.svc.cluster.local:8080/eureka,http://eureka-1.eureka.cosmos.svc.cluster.local:8080/eureka,http://eureka-2.eureka.cosmos.svc.cluster.local:8080/eureka,http://eureka-3.eureka.cosmos.svc.cluster.local:8080/eureka"
         PIPELINE_IMAGE = "128.21.35.10:5000/${env.PIPELINE_NAME_SPACE}/${env.PIPELINE_BUILD_IMAGE}:${env.BUILD_NUMBER}"
         def server = ''
