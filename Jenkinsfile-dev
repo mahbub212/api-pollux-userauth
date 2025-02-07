@@ -29,7 +29,7 @@ pipeline {
                 script {
                    server = getHost()
                 }
-                 git branch:'master', credentialsId: 'biznetgio1', url: 'http://128.21.24.60:8888/pollux/api-pollux-userauth'
+                 git branch:'development', credentialsId: 'biznetgio1', url: 'http://128.21.24.60:8888/pollux/api-pollux-userauth'
 
             }
         }
