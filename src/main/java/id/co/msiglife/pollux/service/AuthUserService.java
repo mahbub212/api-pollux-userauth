@@ -5,10 +5,13 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.text.ParseException;
+import java.time.ZoneId;
+import java.time.ZonedDateTime;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
+import javax.persistence.Query;
 import javax.sql.DataSource;
 import javax.persistence.EntityManager;
 import javax.persistence.PersistenceContext;
@@ -50,6 +53,7 @@ public class AuthUserService {
 	@Value("${custom.timeout.actual}")
 	private int actualTimeoutInSeconds;
 
+	@Transactional
 	public LoginUserResponse login(LoginUserRequest request) throws ParseException {
 		User user = userRepository.findByUsername(request.getUsername());
 		if (user != null) {
@@ -80,8 +84,9 @@ public class AuthUserService {
 	public LogoutUserResponse logout(LogoutUserRequest request) throws ParseException {
 		User user = userRepository.findByUsername(request.getUsername());
 		if(user != null) {
-			updateLusNonActive(user);
-			updateNullLussOnline(user);
+			// commented for login lus active keep deactivating issue - 16-01-2025
+//			updateLusNonActive(user);
+//			updateNullLussOnline(user);
 			return createLogoutUserResponse(user);
 		} else {
 			return createLogoutUserErrorResponse(StaticValue.LOGIN_CODE_RESP_NOT_FOUND, StaticValue.LOGIN_MSG_RESP_NOT_FOUND);
