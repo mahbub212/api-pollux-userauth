@@ -34,6 +34,28 @@ custom:
     alert: 1500 # seconds
     actual: 1800 # seconds
 
+management:
+  endpoints:
+    web:
+      exposure:
+        include: "*"
+  metrics:
+    export:
+      atlas:
+        enabled: false
+  endpoint:
+    restart:
+      enabled: true
+    health:
+      show-details: always
+  health:
+    db:
+      enabled: true
+    diskspace:
+      enabled: true
+    ping:
+      enabled: true
+
 # Konfigurasi untuk profil dev
 ---
 spring:
