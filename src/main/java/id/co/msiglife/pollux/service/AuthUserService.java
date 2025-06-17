@@ -11,6 +11,7 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
+import java.util.stream.Collectors;
 import javax.persistence.Query;
 import javax.sql.DataSource;
 import javax.persistence.EntityManager;
@@ -58,7 +59,7 @@ public class AuthUserService {
 		User user = userRepository.findByUsername(request.getUsername());
 		if (user != null) {
 			if (request.getPassword().equals(decryptPassword(user.getPassword()))) {
-				UserRole userRole = userRoleRepository.findByLusIdWithRoleAccess(user.getUserId());
+				List<UserRole> userRole = userRoleRepository.findByLusIdWithRoleAccessList(user.getUserId());
 				if (userRole != null) {
 					JwtUtil jwt = new JwtUtil();
 					String token = jwt.generate(user, userRole);
@@ -201,12 +202,16 @@ public class AuthUserService {
 	}
 
 	// RESPONSE LOGIN USER 
-	private LoginUserResponse createLoginUserResponse(String token, UserRole userRole, User user) {
+	private LoginUserResponse createLoginUserResponse(String token, List<UserRole> userRoles, User user) {
 		HashMap<String, Object> dataResp = new HashMap<String, Object>();
 		dataResp.put("token", token);
 		dataResp.put("is_expired", false);
 		dataResp.put("is_first_login", false);
-		dataResp.put("role_id", userRole.getRoleId());
+		//dataResp.put("role_id", userRole.getRoleId());
+		List<Integer> roleIds = userRoles.stream()
+				.map(UserRole::getRoleId)
+				.collect(Collectors.toList());
+		dataResp.put("role_id", roleIds);
 		dataResp.put("full_name", user.getLusFullName());
 		
 		return LoginUserResponse.builder()
@@ -274,8 +279,12 @@ public class AuthUserService {
 
 	public CheckRoleResponse checkRoleAccess(CheckRoleRequest request) {
 
-		int roleId = request.getRoleId();
+		System.out.println(request.getRoleId());
+
+		List<Integer> roleId = request.getRoleId();
+
 		List<PolluxRoleAccessMenu> roleAccessMenu = roleAccessMenuRepository.getRoleAccessMenu(roleId);
+
 		if(roleAccessMenu.size() > 0) {
 			List<HashMap<String, Object>> menuList = new ArrayList<HashMap<String,Object>>();
 			HashMap<String, Object> menuMap;
@@ -309,7 +318,7 @@ public class AuthUserService {
 	}
 
 	// RESPONSE CHECK ROLE ACCESS LIST
-	private CheckRoleResponse createCheckRoleAccessResponse(int code, String message, List<HashMap<String, Object>> menuList, int roleId) {
+	private CheckRoleResponse createCheckRoleAccessResponse(int code, String message, List<HashMap<String, Object>> menuList, List<Integer> roleId) {
 		return CheckRoleResponse.builder()
 				.code(code)
 				.message(message)
@@ -318,7 +327,7 @@ public class AuthUserService {
 				.build();
 	}
 
-	private CheckRoleResponse createCheckRoleAccessErrorResponse(int code, String message, int roleId) {
+	private CheckRoleResponse createCheckRoleAccessErrorResponse(int code, String message, List<Integer> roleId) {
 		return CheckRoleResponse.builder()
 				.code(code)
 				.message(message)
