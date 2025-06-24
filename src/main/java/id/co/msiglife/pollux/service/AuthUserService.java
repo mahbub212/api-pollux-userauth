@@ -207,12 +207,14 @@ public class AuthUserService {
 		dataResp.put("token", token);
 		dataResp.put("is_expired", false);
 		dataResp.put("is_first_login", false);
+		dataResp.put("expired_at", jwtUtil.getExpirationDateFromToken(token).getTime());
 		//dataResp.put("role_id", userRole.getRoleId());
 		List<Integer> roleIds = userRoles.stream()
 				.map(UserRole::getRoleId)
 				.collect(Collectors.toList());
 		dataResp.put("role_id", roleIds);
 		dataResp.put("full_name", user.getLusFullName());
+		dataResp.put("user_id", user.getUserId());
 		
 		return LoginUserResponse.builder()
 				.code(HttpStatus.OK.value())
@@ -251,7 +253,10 @@ public class AuthUserService {
 
 	public TokenCheckResponseDTO checkToken(String token) {
 		boolean isExpired = isTokenExpired(token);
-		Integer roleId = null;
+		String username = jwtUtil.getUsernameFromJwtToken(token);
+		Long expiredAt = jwtUtil.getExpirationDateFromToken(token).getTime();
+		Long userId = jwtUtil.getAllClaimsFromToken(token).get("user_id", Long.class);
+		List<Integer> roleId = null;
 
 		if (!isExpired) {
 			roleId = jwtUtil.getRoleIdFromJwtToken(token);
@@ -261,6 +266,9 @@ public class AuthUserService {
 				.isFirstLogin(false)
 				.isExpired(isExpired)
 				.roleId(roleId)
+				.fullName(username)
+				.expiredAt(expiredAt)
+				.userId(userId)
 				.token(token)
 				.build();
 
@@ -278,8 +286,6 @@ public class AuthUserService {
 	}
 
 	public CheckRoleResponse checkRoleAccess(CheckRoleRequest request) {
-
-		System.out.println(request.getRoleId());
 
 		List<Integer> roleId = request.getRoleId();
 

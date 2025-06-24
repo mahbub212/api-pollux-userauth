@@ -9,10 +9,7 @@ import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.security.Keys;
 import java.security.Key;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Component
@@ -67,9 +64,22 @@ public class JwtUtil {
                 .compact();
     }
     
-    public Integer getRoleIdFromJwtToken(String token) {
+    public List<Integer> getRoleIdFromJwtToken(String token) {
         Claims claims = getAllClaimsFromToken(token);
-        return claims.get("role_id", Integer.class);
+        List<Object> rawList = claims.get("role_id", List.class);
+        List<Integer> roleIds = new ArrayList<>();
+        for (Object item : rawList) {
+            if (item instanceof Number) {
+                roleIds.add(((Number) item).intValue());
+            }
+        }
+
+        return roleIds;
+    }
+
+    public String getUsernameFromJwtToken(String token) {
+        String username = getAllClaimsFromToken(token).getSubject();
+        return username;
     }
 
 }

@@ -86,7 +86,6 @@ public class AuthUserController {
 			produces = MediaType.APPLICATION_JSON_VALUE)
 	public ResponseEntity<CheckRoleResponse> checkRoleAccess(@Validated @RequestBody CheckRoleRequest request) throws ParseException {
 		CheckRoleResponse response = authUserService.checkRoleAccess(request);
-		System.out.println("asfjhruf");
 		if (response.getCode() == HttpStatus.OK.value()) {
 			return ResponseEntity.ok(response);
 		} else {
