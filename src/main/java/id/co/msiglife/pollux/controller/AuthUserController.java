@@ -1,6 +1,7 @@
 package id.co.msiglife.pollux.controller;
 
 import java.text.ParseException;
+import java.util.List;
 
 import id.co.msiglife.pollux.dto.*;
 import org.slf4j.Logger;
@@ -99,5 +100,11 @@ public class AuthUserController {
 		ApiResponse<TimeoutDTO> response = new ApiResponse<>(HttpStatus.OK.value(), "Success Get Data", timeoutDTO);
 		return ResponseEntity.ok(response);
 	}
-	
+
+	@PostMapping("/api/menus")
+	public List<MenuTreeDto> getTree(@RequestBody List<Integer> request) {
+		return authUserService.getMenuTreeByRoles(request);
+	}
+
+
 }

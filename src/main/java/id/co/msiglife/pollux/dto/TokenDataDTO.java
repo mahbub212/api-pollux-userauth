@@ -32,5 +32,8 @@ public class TokenDataDTO {
 	@JsonProperty(value = "user_id")
 	private Long userId;
 
+	@JsonProperty(value = "list_menu_access")
+	private List<MenuTreeDto> menuTreeDtos;
+
 	private String token;
 }

@@ -7,10 +7,7 @@ import java.sql.SQLException;
 import java.text.ParseException;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.List;
+import java.util.*;
 import java.util.stream.Collectors;
 import javax.persistence.Query;
 import javax.sql.DataSource;
@@ -20,16 +17,13 @@ import javax.persistence.PersistenceContext;
 import id.co.msiglife.pollux.dto.*;
 import id.co.msiglife.pollux.entity.Menu;
 import id.co.msiglife.pollux.entity.PolluxRoleAccessMenu;
-import id.co.msiglife.pollux.repository.MenuRepository;
-import id.co.msiglife.pollux.repository.RoleAccessMenuRepository;
+import id.co.msiglife.pollux.repository.*;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import id.co.msiglife.pollux.entity.User;
 import id.co.msiglife.pollux.entity.UserRole;
-import id.co.msiglife.pollux.repository.UserRepository;
-import id.co.msiglife.pollux.repository.UserRoleRepository;
 import id.co.msiglife.pollux.util.JwtUtil;
 import id.co.msiglife.pollux.util.StaticValue;
 import javax.transaction.Transactional;
@@ -44,6 +38,7 @@ public class AuthUserService {
 	private final JwtUtil jwtUtil;
 	private final MenuRepository menuRepository;
 	private final RoleAccessMenuRepository roleAccessMenuRepository;
+	private final MenuPlxRepository menuPlxRepository;
 	
 	@PersistenceContext
 	private EntityManager entityManager;
@@ -215,6 +210,7 @@ public class AuthUserService {
 		dataResp.put("role_id", roleIds);
 		dataResp.put("full_name", user.getLusFullName());
 		dataResp.put("user_id", user.getUserId());
+		dataResp.put("list_menu_access", getMenuTreeByRoles(roleIds));
 		
 		return LoginUserResponse.builder()
 				.code(HttpStatus.OK.value())
@@ -257,9 +253,11 @@ public class AuthUserService {
 		Long expiredAt = jwtUtil.getExpirationDateFromToken(token).getTime();
 		Long userId = jwtUtil.getAllClaimsFromToken(token).get("user_id", Long.class);
 		List<Integer> roleId = null;
+		List<MenuTreeDto> menuTreeDtos = null;
 
 		if (!isExpired) {
 			roleId = jwtUtil.getRoleIdFromJwtToken(token);
+			menuTreeDtos = getMenuTreeByRoles(roleId);
 		}
 
 		TokenDataDTO tokenData = TokenDataDTO.builder()
@@ -270,6 +268,7 @@ public class AuthUserService {
 				.expiredAt(expiredAt)
 				.userId(userId)
 				.token(token)
+				.menuTreeDtos(menuTreeDtos)
 				.build();
 
 		TokenCheckResponseDTO responseDTO = TokenCheckResponseDTO.builder()
@@ -348,6 +347,37 @@ public class AuthUserService {
 		} else {
 			return false;
 		}
+	}
+
+	public List<MenuTreeDto> getMenuTreeByRoles(List<Integer> request) {
+		List<Map<String, Object>> rows = menuPlxRepository.findMenuTreeByRoles(request);
+		Map<Long, MenuTreeDto> nodeMap = new LinkedHashMap<>();
+		List<MenuTreeDto> roots = new ArrayList<>();
+
+		for (Map<String, Object> row : rows) {
+			Long id = ((Number) row.get("LSMP_ID")).longValue();
+			Long parentId = row.get("PARENT_ID") != null ? ((Number) row.get("PARENT_ID")).longValue() : null;
+
+			MenuTreeDto node = new MenuTreeDto();
+			node.lsmpId = id;
+			node.label = (String) row.get("LABEL");
+			node.path = (String) row.get("PATH");
+			node.type = ((Number) row.get("TYPE")).intValue();
+			node.icon = (String) row.get("ICON");
+			nodeMap.put(id, node);
+
+			if (parentId == null) {
+				roots.add(node);
+			} else {
+				MenuTreeDto parent = nodeMap.get(parentId);
+				if (parent != null) {
+					parent.children.add(node);
+				} else {
+					// Optional log if parent not found
+				}
+			}
+		}
+		return roots;
 	}
 
 }
