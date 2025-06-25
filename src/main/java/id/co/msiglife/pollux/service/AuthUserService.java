@@ -358,18 +358,26 @@ public class AuthUserService {
 		List<Map<String, Object>> rows = menuPlxRepository.findMenuTreeByRoles(request);
 		Map<Long, MenuTreeDto> nodeMap = new LinkedHashMap<>();
 		List<MenuTreeDto> roots = new ArrayList<>();
+		Map<Long, List<MenuTreeDto>> tempChild = new HashMap<>();
 
 		for (Map<String, Object> row : rows) {
 			Long id = ((Number) row.get("LSMP_ID")).longValue();
 			Long parentId = row.get("PARENT_ID") != null ? ((Number) row.get("PARENT_ID")).longValue() : null;
 
 			MenuTreeDto node = new MenuTreeDto();
-			node.lsmpId = id;
+			node.lsmp_id = id;
 			node.label = (String) row.get("LABEL");
 			node.path = (String) row.get("PATH");
 			node.type = ((Number) row.get("TYPE")).intValue();
 			node.icon = (String) row.get("ICON");
+			node.is_accessible = ((Number) row.get("IS_ACCESSIBLE")).intValue();
 			nodeMap.put(id, node);
+
+			// Simpan temp sementara jika parent belum ada
+			if (tempChild.containsKey(id)) {
+				node.children.addAll(tempChild.get(id));
+				tempChild.remove(id);
+			}
 
 			if (parentId == null) {
 				roots.add(node);
@@ -378,7 +386,11 @@ public class AuthUserService {
 				if (parent != null) {
 					parent.children.add(node);
 				} else {
-					// Optional log if parent not found
+					//cek udah ada di tempChild berdasarkan parent id
+					if (!tempChild.containsKey(parentId)) {
+						tempChild.put(parentId, new ArrayList<>());
+					}
+					tempChild.get(parentId).add(node);
 				}
 			}
 		}

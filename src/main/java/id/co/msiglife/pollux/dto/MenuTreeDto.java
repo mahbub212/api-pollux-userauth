@@ -13,11 +13,12 @@ import java.util.List;
 @Builder
 public class MenuTreeDto {
 
-        public Long lsmpId;
+        public Long lsmp_id;
         public String label;
         public String path;
         public Integer type;
         public String icon;
+        public Integer is_accessible;
         public List<MenuTreeDto> children = new ArrayList<>();
 
 }
