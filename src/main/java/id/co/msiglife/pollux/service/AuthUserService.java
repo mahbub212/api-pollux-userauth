@@ -77,8 +77,13 @@ public class AuthUserService {
 
 
 	@Transactional
-	public LogoutUserResponse logout(LogoutUserRequest request) throws ParseException {
-		User user = userRepository.findByUsername(request.getUsername());
+	public LogoutUserResponse logout(String authToken) throws ParseException {
+		if (authToken == null || authToken.isEmpty()) {
+			return createLogoutUserErrorResponse(HttpStatus.UNAUTHORIZED.value(), "Authorization token is missing or empty");
+		}
+
+		String username = jwtUtil.getUsernameFromJwtToken(authToken);
+		User user = userRepository.findByUsername(username);
 		if(user != null) {
 			// commented for login lus active keep deactivating issue - 16-01-2025
 //			updateLusNonActive(user);

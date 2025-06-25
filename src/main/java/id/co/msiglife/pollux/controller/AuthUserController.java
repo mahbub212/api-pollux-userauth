@@ -28,7 +28,8 @@ public class AuthUserController {
 	@PostMapping(
 			path = "/api/auth/login",
 			consumes = MediaType.APPLICATION_JSON_VALUE,
-			produces = MediaType.APPLICATION_JSON_VALUE)
+			produces = MediaType.APPLICATION_JSON_VALUE
+	)
 	public ResponseEntity<LoginUserResponse> login(@Validated @RequestBody LoginUserRequest request) throws ParseException {
 		LoginUserResponse response = authUserService.login(request);
 		if (response.getCode() == HttpStatus.OK.value()) {
@@ -41,9 +42,13 @@ public class AuthUserController {
 	@PostMapping(
 			path = "/api/auth/logout",
 			consumes = MediaType.APPLICATION_JSON_VALUE,
-			produces = MediaType.APPLICATION_JSON_VALUE)
-	public ResponseEntity<LogoutUserResponse> logout(@Validated @RequestBody LogoutUserRequest request) throws ParseException {
-		LogoutUserResponse response = authUserService.logout(request);
+			produces = MediaType.APPLICATION_JSON_VALUE
+	)
+	public ResponseEntity<LogoutUserResponse> logout(HttpServletRequest request) throws ParseException {
+		String authorizationHeader = request.getHeader("Authorization");
+		logger.info("Authorization Header: {}", authorizationHeader);
+
+		LogoutUserResponse response = authUserService.logout(authorizationHeader);
 		if (response.getCode() == HttpStatus.OK.value()) {
 			return ResponseEntity.ok(response);
 		} else {
