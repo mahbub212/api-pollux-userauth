@@ -58,6 +58,29 @@ public class JwtUtil {
                 .signWith(key)
                 .compact();
     }
+
+    public String generateToken5Minutes(User user, UserRole userRole) {
+        Map<String, Object> claims = new HashMap<>();
+        claims.put("role_id", userRole.getRoleId());
+        claims.put("user_id", user.getUserId());
+        return doGenerateToken5Minutes(claims, user.getUsername());
+    }
+
+    private String doGenerateToken5Minutes(Map<String, Object> claims, String username) {
+        long expirationTimeLong;
+        expirationTimeLong = Long.parseLong(expirationTime);
+        final Date createdDate = new Date();
+        expirationTimeLong = Long.parseLong("300000");
+        final Date expirationDate = new Date(createdDate.getTime() + expirationTimeLong);
+
+        return Jwts.builder()
+                .setClaims(claims)
+                .setSubject(username)
+                .setIssuedAt(createdDate)
+                .setExpiration(expirationDate)
+                .signWith(key)
+                .compact();
+    }
     
     public Integer getRoleIdFromJwtToken(String token) {
         Claims claims = getAllClaimsFromToken(token);
