@@ -50,16 +50,13 @@ public class JwtUtil {
         final Date createdDate = new Date();
 
         Calendar calendar = Calendar.getInstance();
-        calendar.setTime(new Date(createdDate.getTime() + expirationTimeLong));
+        calendar.setTimeInMillis(createdDate.getTime() + expirationTimeLong);
         calendar.set(Calendar.HOUR_OF_DAY, 3); // Set hour to 03
         calendar.set(Calendar.MINUTE, 0);
         calendar.set(Calendar.SECOND, 0);
         calendar.set(Calendar.MILLISECOND, 0);
 
         Date expirationDate = calendar.getTime();
-
-        // make expiration date at 03.00 am of the next day on jdk 1.8
-        System.out.println("Token will expire at : " + expirationDate);
 
         return Jwts.builder()
                 .setClaims(claims)
