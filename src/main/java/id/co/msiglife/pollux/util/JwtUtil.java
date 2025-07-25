@@ -9,10 +9,7 @@ import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.security.Keys;
 import java.security.Key;
-import java.util.Calendar;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.*;
 
 @Component
 public class JwtUtil {
@@ -49,7 +46,7 @@ public class JwtUtil {
         long expirationTimeLong = Long.parseLong(expirationTime);
         final Date createdDate = new Date();
 
-        Calendar calendar = Calendar.getInstance();
+        Calendar calendar = Calendar.getInstance(TimeZone.getTimeZone(StaticValue.TIMEZONE));
         calendar.setTimeInMillis(createdDate.getTime() + expirationTimeLong);
         calendar.set(Calendar.HOUR_OF_DAY, 3); // Set hour to 03
         calendar.set(Calendar.MINUTE, 0);
