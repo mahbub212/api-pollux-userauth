@@ -47,13 +47,17 @@ public class JwtUtil {
     }
     
     private String doGenerateToken(Map<String, Object> claims, String username) {
-        long expirationTimeLong;
-        expirationTimeLong = Long.parseLong(expirationTime);
+        long expirationTimeLong = Long.parseLong(expirationTime);
         final Date createdDate = new Date();
-        final Date expirationDate = new Date(createdDate.getTime() + expirationTimeLong);
-        //long satuHariMillis = 24L * 60 * 60 * 1000;
-        //Date expirationDate = new Date(createdDate.getTime() - satuHariMillis);
-        //final Date expirationDate = new Date(createdDate.getTime() + expirationTimeLong);
+
+        Calendar calendar = Calendar.getInstance(TimeZone.getTimeZone(StaticValue.TIMEZONE));
+        calendar.setTimeInMillis(createdDate.getTime() + expirationTimeLong);
+        calendar.set(Calendar.HOUR_OF_DAY, 3); // Set hour to 03
+        calendar.set(Calendar.MINUTE, 0);
+        calendar.set(Calendar.SECOND, 0);
+        calendar.set(Calendar.MILLISECOND, 0);
+
+        Date expirationDate = calendar.getTime();
 
         return Jwts.builder()
                 .setClaims(claims)
