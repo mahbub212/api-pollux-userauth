@@ -47,7 +47,7 @@ public class JwtUtil {
     }
     
     private String doGenerateToken(Map<String, Object> claims, String username) {
-        long expirationTimeLong = Long.parseLong(expirationTime);
+        long expirationTimeLong = Long.parseLong(expirationTime) * 60 * 60 * 1000L; // Convert hours to milliseconds
         final Date createdDate = new Date();
 
         Calendar calendar = Calendar.getInstance(TimeZone.getTimeZone(StaticValue.TIMEZONE));
@@ -58,6 +58,7 @@ public class JwtUtil {
         calendar.set(Calendar.MILLISECOND, 0);
 
         Date expirationDate = calendar.getTime();
+        System.out.println("/// Expiration Date : " + calendar.getTimeInMillis());
 
         return Jwts.builder()
                 .setClaims(claims)
@@ -85,5 +86,4 @@ public class JwtUtil {
         String username = getAllClaimsFromToken(token).getSubject();
         return username;
     }
-
 }

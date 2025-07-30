@@ -362,7 +362,7 @@ public class AuthUserService {
 
 		for (Map<String, Object> row : rows) {
 			Long id = ((Number) row.get("LSMP_ID")).longValue();
-			Long parentId = row.get("PARENT_ID") != null ? ((Number) row.get("PARENT_ID")).longValue() : null;
+			Long parentId = ((Number) row.get("PARENT_ID")).longValue();
 
 			MenuTreeDto node = new MenuTreeDto();
 			node.lsmp_id = id;
@@ -379,7 +379,7 @@ public class AuthUserService {
 				tempChild.remove(id);
 			}
 
-			if (parentId == null) {
+			if (parentId == 0) {
 				roots.add(node);
 			} else {
 				MenuTreeDto parent = nodeMap.get(parentId);

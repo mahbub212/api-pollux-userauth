@@ -17,6 +17,6 @@ public class StaticValue {
 	 public final static String CHECK_ROLE_MSG_RESP_NOT_FOUND = "Role ID tidak ditemukan";
 	 
 	 public final static String SECRET_KEY_LOGIN_TOKEN = "rdwPjGQK1IiCEd2QinzcwZJNTne3DbtN";
-	 public final static String EXP_TIME_LOGIN_TOKEN = "86400000"; // 1 day in millisecond
+	 public final static String EXP_TIME_LOGIN_TOKEN = "1"; // expiration times in hour
 	 public final static String TIMEZONE = "Asia/Jakarta";
 }
