@@ -36,19 +36,6 @@ public class AuthUserController {
 			return ResponseEntity.status(response.getCode()).body(response);
 		}
 	}
-
-	@PostMapping(
-			path = "/api/auth/generateToken",
-			consumes = MediaType.APPLICATION_JSON_VALUE,
-			produces = MediaType.APPLICATION_JSON_VALUE)
-	public ResponseEntity<LoginUserResponse> generateToken(@Validated @RequestBody LoginUserRequest request) throws ParseException {
-		LoginUserResponse response = authUserService.generateToken(request);
-		if (response.getCode() == HttpStatus.OK.value()) {
-			return ResponseEntity.ok(response);
-		} else {
-			return ResponseEntity.status(response.getCode()).body(response);
-		}
-	}
 	
 	@PostMapping(
 			path = "/api/auth/logout",

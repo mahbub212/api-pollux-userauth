@@ -80,32 +80,6 @@ public class AuthUserService {
 	}
 
 	@Transactional
-	public LoginUserResponse generateToken(LoginUserRequest request) throws ParseException {
-		User user = userRepository.findByUsername(request.getUsername());
-		if (user != null) {
-			if (request.getPassword().equals(decryptPassword(user.getPassword()))) {
-				UserRole userRole = userRoleRepository.findByLusIdWithRoleAccess(user.getUserId());
-				if (userRole != null) {
-					JwtUtil jwt = new JwtUtil();
-					String token = jwt.generateToken5Minutes(user, userRole);
-					if (isUserActive(user)) {
-						updateLussOnline(user);
-						return createLoginUserResponse(token, userRole, user);
-					} else {
-						return createLoginUserErrorResponse(StaticValue.LOGIN_CODE_RESP_INACTIVE, StaticValue.LOGIN_MSG_RESP_INACTIVE);
-					}
-				} else {
-					return createLoginUserErrorResponse(StaticValue.LOGIN_CODE_RESP_NOT_FOUND, StaticValue.LOGIN_MSG_RESP_NOT_FOUND + " in POLLUX");
-				}
-			} else {
-				return createLoginUserErrorResponse(StaticValue.LOGIN_CODE_RESP_INCORRECT_PASSWORD, StaticValue.LOGIN_MSG_RESP_INCORRECT_PASSWORD);
-			}
-		} else {
-			return createLoginUserErrorResponse(StaticValue.LOGIN_CODE_RESP_NOT_FOUND, StaticValue.LOGIN_MSG_RESP_NOT_FOUND);
-		}
-	}
-
-	@Transactional
 	public LogoutUserResponse logout(LogoutUserRequest request) throws ParseException {
 		User user = userRepository.findByUsername(request.getUsername());
 		if(user != null) {
