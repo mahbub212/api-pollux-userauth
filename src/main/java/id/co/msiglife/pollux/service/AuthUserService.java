@@ -19,9 +19,14 @@ import javax.persistence.PersistenceContext;
 import id.co.msiglife.pollux.dto.*;
 import id.co.msiglife.pollux.entity.Menu;
 import id.co.msiglife.pollux.entity.PolluxRoleAccessMenu;
+import id.co.msiglife.pollux.exception.InactiveException;
+import id.co.msiglife.pollux.exception.IncorrectPasswordException;
+import id.co.msiglife.pollux.exception.NotFoundException;
 import id.co.msiglife.pollux.repository.MenuRepository;
 import id.co.msiglife.pollux.repository.RoleAccessMenuRepository;
+import id.co.msiglife.pollux.util.WorkFlowProcessIdStaticValue;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
@@ -55,28 +60,32 @@ public class AuthUserService {
 
 	@Transactional
 	public LoginUserResponse login(LoginUserRequest request) throws ParseException {
-		User user = userRepository.findByUsername(request.getUsername());
-		if (user != null) {
-			if (request.getPassword().equals(decryptPassword(user.getPassword()))) {
-				UserRole userRole = userRoleRepository.findByLusIdWithRoleAccess(user.getUserId());
-				if (userRole != null) {
-					JwtUtil jwt = new JwtUtil();
-					String token = jwt.generate(user, userRole);
-					if (isUserActive(user)) {
-						updateLussOnline(user);
-						return createLoginUserResponse(token, userRole, user);
+			User user = userRepository.findByUsername(request.getUsername());
+			if (user != null) {
+				if (request.getPassword().equals(decryptPassword(user.getPassword()))) {
+					UserRole userRole = userRoleRepository.findByLusIdWithRoleAccess(user.getUserId());
+					if (userRole != null) {
+						JwtUtil jwt = new JwtUtil();
+						String token = jwt.generate(user, userRole);
+						if (isUserActive(user)) {
+							updateLussOnline(user);
+							return createLoginUserResponse(token, userRole, user);
+						} else {
+							throw new InactiveException(StaticValue.LOGIN_MSG_RESP_INACTIVE, WorkFlowProcessIdStaticValue.LOGIN_PROCESS_ID);
+//							return createLoginUserErrorResponse(StaticValue.LOGIN_CODE_RESP_INACTIVE, StaticValue.LOGIN_MSG_RESP_INACTIVE);
+						}
 					} else {
-						return createLoginUserErrorResponse(StaticValue.LOGIN_CODE_RESP_INACTIVE, StaticValue.LOGIN_MSG_RESP_INACTIVE);
+						throw new NotFoundException(StaticValue.LOGIN_MSG_RESP_NOT_FOUND, WorkFlowProcessIdStaticValue.LOGIN_PROCESS_ID);
+//						return createLoginUserErrorResponse(StaticValue.LOGIN_CODE_RESP_NOT_FOUND, StaticValue.LOGIN_MSG_RESP_NOT_FOUND + " in POLLUX");
 					}
 				} else {
-					return createLoginUserErrorResponse(StaticValue.LOGIN_CODE_RESP_NOT_FOUND, StaticValue.LOGIN_MSG_RESP_NOT_FOUND + " in POLLUX");
+					throw new IncorrectPasswordException(StaticValue.LOGIN_MSG_RESP_INCORRECT_PASSWORD, WorkFlowProcessIdStaticValue.LOGIN_PROCESS_ID);
+//					return createLoginUserErrorResponse(StaticValue.LOGIN_CODE_RESP_INCORRECT_PASSWORD, StaticValue.LOGIN_MSG_RESP_INCORRECT_PASSWORD);
 				}
 			} else {
-				return createLoginUserErrorResponse(StaticValue.LOGIN_CODE_RESP_INCORRECT_PASSWORD, StaticValue.LOGIN_MSG_RESP_INCORRECT_PASSWORD);
+				throw new NotFoundException(StaticValue.LOGIN_MSG_RESP_NOT_FOUND, WorkFlowProcessIdStaticValue.LOGIN_PROCESS_ID);
+//				return createLoginUserErrorResponse(StaticValue.LOGIN_CODE_RESP_NOT_FOUND, StaticValue.LOGIN_MSG_RESP_NOT_FOUND);
 			}
-		} else {
-			return createLoginUserErrorResponse(StaticValue.LOGIN_CODE_RESP_NOT_FOUND, StaticValue.LOGIN_MSG_RESP_NOT_FOUND);
-		}
 	}
 
 
@@ -89,7 +98,8 @@ public class AuthUserService {
 //			updateNullLussOnline(user);
 			return createLogoutUserResponse(user);
 		} else {
-			return createLogoutUserErrorResponse(StaticValue.LOGIN_CODE_RESP_NOT_FOUND, StaticValue.LOGIN_MSG_RESP_NOT_FOUND);
+			throw new NotFoundException(StaticValue.LOGIN_MSG_RESP_NOT_FOUND, WorkFlowProcessIdStaticValue.LOGOUT_PROCESS_ID);
+//			return createLogoutUserErrorResponse(StaticValue.LOGIN_CODE_RESP_NOT_FOUND, StaticValue.LOGIN_MSG_RESP_NOT_FOUND);
 		}
 	}
 	
@@ -304,7 +314,7 @@ public class AuthUserService {
 			}
 			return createCheckRoleAccessResponse(StaticValue.CHECK_ROLE_CODE_RESP_SUCCESS, StaticValue.CHECK_ROLE_MSG_RESP_SUCCESS, menuList, roleId);
 		} else {
-			return createCheckRoleAccessErrorResponse(StaticValue.CHECK_ROLE_CODE_RESP_NOT_FOUND, StaticValue.CHECK_ROLE_MSG_RESP_NOT_FOUND, roleId);
+			throw new NotFoundException(StaticValue.CHECK_ROLE_MSG_RESP_NOT_FOUND, WorkFlowProcessIdStaticValue.CHECK_ROLE_PROCESS_ID);
 		}
 	}
 
