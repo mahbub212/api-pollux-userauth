@@ -76,7 +76,7 @@ public class AuthUserService {
 	}
 
 	@Transactional
-	public LogoutUserResponse logout(String authToken) throws ParseException {
+	public LogoutUserResponse logout(String authToken) throws Exception {
 		if (authToken == null || authToken.isEmpty()) {
 			return createLogoutUserErrorResponse(HttpStatus.UNAUTHORIZED.value(), "Authorization token is missing or empty");
 		}
@@ -253,7 +253,7 @@ public class AuthUserService {
 
 	public TokenCheckResponseDTO checkToken(String token) {
 		boolean isExpired = isTokenExpired(token);
-		String username = jwtUtil.getUsernameFromJwtToken(token);
+		String fullname = jwtUtil.getFullnameFromJwtToken(token);
 		Long expiredAt = jwtUtil.getExpirationDateFromToken(token).getTime();
 		Long userId = jwtUtil.getAllClaimsFromToken(token).get("user_id", Long.class);
 		List<Integer> roleId = null;
@@ -268,7 +268,7 @@ public class AuthUserService {
 				.isFirstLogin(false)
 				.isExpired(isExpired)
 				.roleId(roleId)
-				.fullName(username)
+				.fullName(fullname)
 				.expiredAt(expiredAt)
 				.userId(userId)
 				.token(token)

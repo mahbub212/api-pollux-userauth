@@ -44,7 +44,7 @@ public class AuthUserController {
 			consumes = MediaType.APPLICATION_JSON_VALUE,
 			produces = MediaType.APPLICATION_JSON_VALUE
 	)
-	public ResponseEntity<LogoutUserResponse> logout(HttpServletRequest request) throws ParseException {
+	public ResponseEntity<LogoutUserResponse> logout(HttpServletRequest request) throws Exception {
 		String authorizationHeader = request.getHeader("Authorization");
 		logger.info("Authorization Header: {}", authorizationHeader);
 
