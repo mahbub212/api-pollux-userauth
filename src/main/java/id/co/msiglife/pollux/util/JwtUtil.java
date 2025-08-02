@@ -43,6 +43,7 @@ public class JwtUtil {
                 .collect(Collectors.toList());
         claims.put("role_id", roleIds);
         claims.put("user_id", user.getUserId());
+        claims.put("full_name", user.getLusFullName());
         return doGenerateToken(claims, user.getUsername());
     }
     
@@ -85,5 +86,10 @@ public class JwtUtil {
     public String getUsernameFromJwtToken(String token) {
         String username = getAllClaimsFromToken(token).getSubject();
         return username;
+    }
+
+    public String getFullnameFromJwtToken(String token) {
+        Claims claims = getAllClaimsFromToken(token);
+        return claims.get("full_name", String.class);
     }
 }
