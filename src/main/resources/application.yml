@@ -89,6 +89,11 @@ spring:
   batch:
     job:
       enabled: false
+  kafka:
+    bootstrap-servers: kafka-dev.msiglife.co.id:9092
+    producer:
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.apache.kafka.common.serialization.StringSerializer
 
 # Konfigurasi untuk profil prod
 ---
@@ -123,3 +128,8 @@ spring:
   batch:
     job:
       enabled: false
+  kafka:
+    bootstrap-servers: kafka-dev.msiglife.co.id:9092
+    producer:
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.apache.kafka.common.serialization.StringSerializer
