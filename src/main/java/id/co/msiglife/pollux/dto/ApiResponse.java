@@ -1,5 +1,8 @@
 package id.co.msiglife.pollux.dto;
 
+import lombok.NoArgsConstructor;
+
+@NoArgsConstructor
 public class ApiResponse<T> {
     private int code;
     private String message;
