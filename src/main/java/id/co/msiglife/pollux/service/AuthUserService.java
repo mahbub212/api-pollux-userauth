@@ -71,20 +71,20 @@ public class AuthUserService {
 							updateLussOnline(user);
 							return createLoginUserResponse(token, userRole, user);
 						} else {
-							throw new InactiveException(StaticValue.LOGIN_MSG_RESP_INACTIVE, WorkFlowProcessIdStaticValue.LOGIN_PROCESS_ID);
-//							return createLoginUserErrorResponse(StaticValue.LOGIN_CODE_RESP_INACTIVE, StaticValue.LOGIN_MSG_RESP_INACTIVE);
+//							throw new InactiveException(StaticValue.LOGIN_MSG_RESP_INACTIVE, WorkFlowProcessIdStaticValue.LOGIN_PROCESS_ID);
+							return createLoginUserErrorResponse(StaticValue.LOGIN_CODE_RESP_INACTIVE, StaticValue.LOGIN_MSG_RESP_INACTIVE);
 						}
 					} else {
-						throw new NotFoundException(StaticValue.LOGIN_MSG_RESP_NOT_FOUND, WorkFlowProcessIdStaticValue.LOGIN_PROCESS_ID);
-//						return createLoginUserErrorResponse(StaticValue.LOGIN_CODE_RESP_NOT_FOUND, StaticValue.LOGIN_MSG_RESP_NOT_FOUND + " in POLLUX");
+//						throw new NotFoundException(StaticValue.LOGIN_MSG_RESP_NOT_FOUND, WorkFlowProcessIdStaticValue.LOGIN_PROCESS_ID);
+						return createLoginUserErrorResponse(StaticValue.LOGIN_CODE_RESP_NOT_FOUND, StaticValue.LOGIN_MSG_RESP_NOT_FOUND + " in POLLUX");
 					}
 				} else {
-					throw new IncorrectPasswordException(StaticValue.LOGIN_MSG_RESP_INCORRECT_PASSWORD, WorkFlowProcessIdStaticValue.LOGIN_PROCESS_ID);
-//					return createLoginUserErrorResponse(StaticValue.LOGIN_CODE_RESP_INCORRECT_PASSWORD, StaticValue.LOGIN_MSG_RESP_INCORRECT_PASSWORD);
+//					throw new IncorrectPasswordException(StaticValue.LOGIN_MSG_RESP_INCORRECT_PASSWORD, WorkFlowProcessIdStaticValue.LOGIN_PROCESS_ID);
+					return createLoginUserErrorResponse(StaticValue.LOGIN_CODE_RESP_INCORRECT_PASSWORD, StaticValue.LOGIN_MSG_RESP_INCORRECT_PASSWORD);
 				}
 			} else {
-				throw new NotFoundException(StaticValue.LOGIN_MSG_RESP_NOT_FOUND, WorkFlowProcessIdStaticValue.LOGIN_PROCESS_ID);
-//				return createLoginUserErrorResponse(StaticValue.LOGIN_CODE_RESP_NOT_FOUND, StaticValue.LOGIN_MSG_RESP_NOT_FOUND);
+//				throw new NotFoundException(StaticValue.LOGIN_MSG_RESP_NOT_FOUND, WorkFlowProcessIdStaticValue.LOGIN_PROCESS_ID);
+				return createLoginUserErrorResponse(StaticValue.LOGIN_CODE_RESP_NOT_FOUND, StaticValue.LOGIN_MSG_RESP_NOT_FOUND);
 			}
 	}
 
@@ -98,8 +98,8 @@ public class AuthUserService {
 //			updateNullLussOnline(user);
 			return createLogoutUserResponse(user);
 		} else {
-			throw new NotFoundException(StaticValue.LOGIN_MSG_RESP_NOT_FOUND, WorkFlowProcessIdStaticValue.LOGOUT_PROCESS_ID);
-//			return createLogoutUserErrorResponse(StaticValue.LOGIN_CODE_RESP_NOT_FOUND, StaticValue.LOGIN_MSG_RESP_NOT_FOUND);
+//			throw new NotFoundException(StaticValue.LOGIN_MSG_RESP_NOT_FOUND, WorkFlowProcessIdStaticValue.LOGOUT_PROCESS_ID);
+			return createLogoutUserErrorResponse(StaticValue.LOGIN_CODE_RESP_NOT_FOUND, StaticValue.LOGIN_MSG_RESP_NOT_FOUND);
 		}
 	}
 	
