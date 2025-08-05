@@ -67,12 +67,11 @@ public class AuthUserController {
 			produces = MediaType.APPLICATION_JSON_VALUE)
 	public ResponseEntity<LogoutUserResponse> logout(@Validated @RequestBody LogoutUserRequest request) throws ParseException {
 		String json = jsonUtil.toJson(request);
-		requestContext.setPayload(json);
+		requestContext.setPayload("{}");
 		LogoutUserResponse response = authUserService.logout(request);
 
 		String jsonResponse = jsonUtil.toJson(response);
-		String jsonRequest = jsonUtil.toJson(request);
-		String msg = new LogMessage(111, new Date(), new Date(), 111, WorkFlowProcessIdStaticValue.LOGOUT_PROCESS_ID, jsonResponse, jsonRequest, "1", "", false).getMessage();
+		String msg = new LogMessage(111, new Date(), new Date(), 111, WorkFlowProcessIdStaticValue.LOGOUT_PROCESS_ID, jsonResponse, "{}", "1", "", false).getMessage();
 		kafkaMessageProducer.sendMessage("POLLUX_LOGS", msg);
 		if (response.getCode() == HttpStatus.OK.value()) {
 			return ResponseEntity.ok(response);
