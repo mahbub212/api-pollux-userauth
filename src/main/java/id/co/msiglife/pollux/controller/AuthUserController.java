@@ -66,7 +66,6 @@ public class AuthUserController {
 			consumes = MediaType.APPLICATION_JSON_VALUE,
 			produces = MediaType.APPLICATION_JSON_VALUE)
 	public ResponseEntity<LogoutUserResponse> logout(@Validated @RequestBody LogoutUserRequest request) throws ParseException {
-		String json = jsonUtil.toJson(request);
 		requestContext.setPayload("{}");
 		LogoutUserResponse response = authUserService.logout(request);
 
