@@ -6,6 +6,8 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.util.List;
+
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
@@ -13,6 +15,6 @@ import lombok.NoArgsConstructor;
 public class CheckRoleRequest {
 
     @JsonProperty(value = "role_id")
-    private int roleId;
+    private List<Integer> roleId;
 
 }

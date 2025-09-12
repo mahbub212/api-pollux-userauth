@@ -10,6 +10,7 @@ import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.security.Keys;
 import java.security.Key;
 import java.util.*;
+import java.util.stream.Collectors;
 
 @Component
 public class JwtUtil {
@@ -35,15 +36,19 @@ public class JwtUtil {
         }
     }
 
-    public String generate(User user, UserRole userRole) {
+    public String generate(User user, List<UserRole> userRoles) {
         Map<String, Object> claims = new HashMap<>();
-        claims.put("role_id", userRole.getRoleId());
+        List<Integer> roleIds = userRoles.stream()
+                .map(UserRole::getRoleId)
+                .collect(Collectors.toList());
+        claims.put("role_id", roleIds);
         claims.put("user_id", user.getUserId());
+        claims.put("full_name", user.getLusFullName());
         return doGenerateToken(claims, user.getUsername());
     }
     
     private String doGenerateToken(Map<String, Object> claims, String username) {
-        long expirationTimeLong = Long.parseLong(expirationTime);
+        long expirationTimeLong = Long.parseLong(expirationTime) * 60 * 60 * 1000L; // Convert hours to milliseconds
         final Date createdDate = new Date();
 
         Calendar calendar = Calendar.getInstance(TimeZone.getTimeZone(StaticValue.TIMEZONE));
@@ -54,6 +59,7 @@ public class JwtUtil {
         calendar.set(Calendar.MILLISECOND, 0);
 
         Date expirationDate = calendar.getTime();
+        System.out.println("/// Expiration Date : " + calendar.getTimeInMillis());
 
         return Jwts.builder()
                 .setClaims(claims)
@@ -64,9 +70,26 @@ public class JwtUtil {
                 .compact();
     }
     
-    public Integer getRoleIdFromJwtToken(String token) {
+    public List<Integer> getRoleIdFromJwtToken(String token) {
         Claims claims = getAllClaimsFromToken(token);
-        return claims.get("role_id", Integer.class);
+        List<Object> rawList = claims.get("role_id", List.class);
+        List<Integer> roleIds = new ArrayList<>();
+        for (Object item : rawList) {
+            if (item instanceof Number) {
+                roleIds.add(((Number) item).intValue());
+            }
+        }
+
+        return roleIds;
     }
 
+    public String getUsernameFromJwtToken(String token) {
+        String username = getAllClaimsFromToken(token).getSubject();
+        return username;
+    }
+
+    public String getFullnameFromJwtToken(String token) {
+        Claims claims = getAllClaimsFromToken(token);
+        return claims.get("full_name", String.class);
+    }
 }
