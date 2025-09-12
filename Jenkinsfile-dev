@@ -29,7 +29,7 @@ pipeline {
                 script {
                    server = getHost()
                 }
-                 git branch:'master', credentialsId: 'gitcredentialursa', url: 'http://gitlab-dev.sinarmasmsiglife.co.id:8888/pollux/api-pollux-userauth'
+                 git branch:'deployment', credentialsId: 'gitcredentialursa', url: 'http://gitlab-dev.sinarmasmsiglife.co.id:8888/pollux/api-pollux-userauth'
 
             }
         }
