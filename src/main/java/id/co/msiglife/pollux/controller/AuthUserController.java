@@ -1,7 +1,6 @@
 package id.co.msiglife.pollux.controller;
 
 import java.text.ParseException;
-import java.util.List;
 
 import id.co.msiglife.pollux.dto.*;
 import org.slf4j.Logger;
@@ -28,8 +27,7 @@ public class AuthUserController {
 	@PostMapping(
 			path = "/api/auth/login",
 			consumes = MediaType.APPLICATION_JSON_VALUE,
-			produces = MediaType.APPLICATION_JSON_VALUE
-	)
+			produces = MediaType.APPLICATION_JSON_VALUE)
 	public ResponseEntity<LoginUserResponse> login(@Validated @RequestBody LoginUserRequest request) throws ParseException {
 		LoginUserResponse response = authUserService.login(request);
 		if (response.getCode() == HttpStatus.OK.value()) {
@@ -42,13 +40,9 @@ public class AuthUserController {
 	@PostMapping(
 			path = "/api/auth/logout",
 			consumes = MediaType.APPLICATION_JSON_VALUE,
-			produces = MediaType.APPLICATION_JSON_VALUE
-	)
-	public ResponseEntity<LogoutUserResponse> logout(HttpServletRequest request) throws Exception {
-		String authorizationHeader = request.getHeader("Authorization");
-		logger.info("Authorization Header: {}", authorizationHeader);
-
-		LogoutUserResponse response = authUserService.logout(authorizationHeader);
+			produces = MediaType.APPLICATION_JSON_VALUE)
+	public ResponseEntity<LogoutUserResponse> logout(@Validated @RequestBody LogoutUserRequest request) throws ParseException {
+		LogoutUserResponse response = authUserService.logout(request);
 		if (response.getCode() == HttpStatus.OK.value()) {
 			return ResponseEntity.ok(response);
 		} else {
@@ -105,11 +99,5 @@ public class AuthUserController {
 		ApiResponse<TimeoutDTO> response = new ApiResponse<>(HttpStatus.OK.value(), "Success Get Data", timeoutDTO);
 		return ResponseEntity.ok(response);
 	}
-
-	@PostMapping("/api/menus")
-	public List<MenuTreeDto> getTree(@RequestBody List<Integer> request) {
-		return authUserService.getMenuTreeByRoles(request);
-	}
-
-
+	
 }

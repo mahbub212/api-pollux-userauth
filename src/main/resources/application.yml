@@ -63,9 +63,9 @@ spring:
     activate:
       on-profile: dev
   datasource:
-    url: jdbc:oracle:thin:@128.21.23.31:1521:AJSDB?oracle.jdbc.timezoneAsRegion=false
-    username: POLLUXDEV
-    password: ACfOqi1x
+    url: jdbc:oracle:thin:@128.21.23.31:1521:AJSDB
+    username: URSADEV
+    password: kjZCbFRD
     driver-class-name: oracle.jdbc.driver.OracleDriver
     hikari:
       auto-commit: true

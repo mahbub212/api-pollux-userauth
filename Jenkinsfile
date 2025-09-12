@@ -1,4 +1,13 @@
-
+def getHost(){
+    def remote = [:]
+    remote.name = 'jenkins-prod'
+    remote.host = '172.16.0.71'
+    remote.user = 'administrator'
+    remote.port = 22
+    remote.password = 'Msig123456'
+    remote.allowAnyHosts = true
+    return remote
+}
 
 pipeline {
     agent any
@@ -17,7 +26,9 @@ pipeline {
     stages {
         stage('Checkout') {
             steps {
-               
+                script {                 
+                   server = getHost()                                   
+                }
                  git branch:'biznetgio1', credentialsId: 'biznetgio1', url: 'http://128.21.24.60:8888/pollux/api-pollux-userauth'
                
             }
@@ -59,19 +70,17 @@ pipeline {
         }
     }
     
-        stage('deploy to kubernetes') {
+    stage('deploy to kubernetes') {
             steps {
                 sh "ls"
-                sh '''
-                ssh administrator@jenkins whoami
-                scp k8s/deployment${name_space}${build_image}.yaml administrator@jenkins:~/.
-                ssh administrator@jenkins kubectl apply -f deployment${name_space}${build_image}.yaml
-                ssh administrator@jenkins kubectl -n ${name_space} rollout status deployment.app/${build_image}
-                '''
-                sh "docker rmi -f ${env.PIPELINE_IMAGE}"
+                 script {
+                   sshPut remote: server, from: "k8s/deployment${name_space}${build_image}.yaml", into: '.'
+                   sshCommand remote: server, command: "kubectl apply -f deployment${name_space}${build_image}.yaml;kubectl -n ${name_space} rollout status deployment.app/${build_image}"
+                }
+                 sh "docker rmi -f ${env.PIPELINE_IMAGE}"
            }
+           
     }
-
     
 }
 post {

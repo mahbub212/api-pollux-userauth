@@ -6,8 +6,6 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-import java.util.List;
-
 
 @Data
 @AllArgsConstructor
@@ -21,19 +19,7 @@ public class TokenDataDTO {
 	private boolean isExpired;
 
 	@JsonProperty(value = "role_id")
-	private List<Integer> roleId;
-
-	@JsonProperty(value = "full_name")
-	private String fullName;
-
-	@JsonProperty(value = "expired_at")
-	private Long expiredAt;
-
-	@JsonProperty(value = "user_id")
-	private Long userId;
-
-	@JsonProperty(value = "list_menu_access")
-	private List<MenuTreeDto> menuTreeDtos;
+	private int roleId;
 
 	private String token;
 }
