@@ -22,7 +22,7 @@ public class CheckRoleResponse {
 	private String message;
 	
 	@JsonProperty(value = "role_id")
-	private int roleId;
+	private List<Integer> roleId;
 	
 	private List<HashMap<String, Object>> data;
 	
