@@ -22,8 +22,10 @@ pipeline {
 
       stage('build') {
             steps {
+              sh "mvn -v"
               sh "mvn clean package"
-           }
+              sh "mvn install:install-file -Dfile=lib/logger-svc-1.0.jar -DgroupId=logger -DartifactId=logger-svc -Dversion=1.0 -Dpackaging=jar"
+                }
       }
 
      stage('dockerized') {
