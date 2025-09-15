@@ -309,21 +309,29 @@ public class AuthUserService {
 
         List<PolluxRoleAccessMenu> roleAccessMenu = roleAccessMenuRepository.getRoleAccessMenu(roleId);
 
-        if(roleAccessMenu.size() > 0) {
-            List<HashMap<String, Object>> menuList = new ArrayList<HashMap<String,Object>>();
-            HashMap<String, Object> menuMap;
-            HashMap<String, Object> actionMap;
+		for (Map<String, Object> row : rows) {
+            Object valId = row.get("ID");
+            Long id = null;
+            if (valId != null) {
+                id = Long.parseLong(valId.toString());
+            }
 
-            for(PolluxRoleAccessMenu role : roleAccessMenu) {
-                actionMap = new HashMap<String, Object>();
-                actionMap.put("update", convertFlagValue(role.getUpdated()));
-                actionMap.put("view", convertFlagValue(role.getView()));
-                actionMap.put("add", convertFlagValue(role.getAdd()));
-                actionMap.put("delete", convertFlagValue(role.getDelete()));
-                actionMap.put("edit", convertFlagValue(role.getEdit()));
-                actionMap.put("download", convertFlagValue(role.getDownload()));
-                actionMap.put("approve", convertFlagValue(role.getApprove()));
-                actionMap.put("change", convertFlagValue(role.getChange()));
+            Object val = row.get("PARENT_ID");
+            Long parentId = null;
+            if (val != null) {
+                parentId = Long.parseLong(val.toString());
+            }
+
+			MenuTreeDto node = new MenuTreeDto();
+			node.label = (String) row.get("LABEL");
+			node.path = (String) row.get("PATH");
+
+            Object valType = row.get("TYPE");
+            node.type = valType != null ? Integer.parseInt(valType.toString()) : 99;
+
+			node.icon = (String) row.get("ICON");
+			node.is_accessible = ((Number) row.get("IS_ACCESSIBLE")).intValue();
+			nodeMap.put(id, node);
 
                 System.out.println("//menu id : "+role.getMenuId());
 
