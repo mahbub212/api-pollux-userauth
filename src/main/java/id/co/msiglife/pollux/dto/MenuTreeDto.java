@@ -13,6 +13,7 @@ import java.util.List;
 @Builder
 public class MenuTreeDto {
 
+        public Long lsmp_id;
         public String label;
         public String path;
         public Integer type;
