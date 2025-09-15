@@ -11,10 +11,10 @@ import java.util.Map;
 public interface MenuPlxRepository extends JpaRepository<MenuPlx, Long> {
     @Query(value = "WITH menu_tree AS ( " +
             "    SELECT " +
-            "       CASE WHEN m.parent_id IS NULL THEN 0 ELSE m.parent_id END AS parent_id, " +
-            "       m.LSMP_ID, m.MENU_ID, m.LABEL, m.TYPE, m.PATH, m.ICON, m.CREATED_DATE, m.DELETED_DATE " +
-            "    FROM EKA.LST_MENU_PLX m " +
-            "    WHERE m.DELETED_DATE IS NULL " +
+            "       CASE WHEN m.category IS NULL THEN '0' ELSE m.category END AS parent_id, " +
+            "       m.MENU_ID, m.NAMA_MENU as LABEL, m.MENU_CODE AS TYPE, m.PATH_ICON AS PATH, m.menu_icon as ID " +
+            "    FROM EKA.LST_MENU m " +
+            "    WHERE m.JENIS = 111 " +
             "), access_menu AS ( " +
             "    SELECT DISTINCT ram.MENU_ID " +
             "    FROM EKA.LST_POLLUX_ROLE_ACCESS_MENU ram " +
@@ -23,7 +23,7 @@ public interface MenuPlxRepository extends JpaRepository<MenuPlx, Long> {
             "SELECT mt.*, CASE WHEN am.MENU_ID IS NOT NULL THEN 1 ELSE 0 END AS IS_ACCESSIBLE " +
             "FROM menu_tree mt " +
             "LEFT JOIN access_menu am ON mt.MENU_ID = am.MENU_ID " +
-            "ORDER BY mt.PARENT_ID, mt.LSMP_ID " ,
+            "ORDER BY mt.PARENT_ID, mt.MENU_ID " ,
             nativeQuery = true)
     List<Map<String, Object>> findMenuTreeByRoles(@Param("roleIds") List<Integer> roleIds);
 }

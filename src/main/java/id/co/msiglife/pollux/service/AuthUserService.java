@@ -361,14 +361,25 @@ public class AuthUserService {
 		Map<Long, List<MenuTreeDto>> tempChild = new HashMap<>();
 
 		for (Map<String, Object> row : rows) {
-			Long id = ((Number) row.get("LSMP_ID")).longValue();
-			Long parentId = ((Number) row.get("PARENT_ID")).longValue();
+            Object valId = row.get("ID");
+            Long id = null;
+            if (valId != null) {
+                id = Long.parseLong(valId.toString());
+            }
+
+            Object val = row.get("PARENT_ID");
+            Long parentId = null;
+            if (val != null) {
+                parentId = Long.parseLong(val.toString());
+            }
 
 			MenuTreeDto node = new MenuTreeDto();
-			node.lsmp_id = id;
 			node.label = (String) row.get("LABEL");
 			node.path = (String) row.get("PATH");
-			node.type = ((Number) row.get("TYPE")).intValue();
+
+            Object valType = row.get("TYPE");
+            node.type = valType != null ? Integer.parseInt(valType.toString()) : 99;
+
 			node.icon = (String) row.get("ICON");
 			node.is_accessible = ((Number) row.get("IS_ACCESSIBLE")).intValue();
 			nodeMap.put(id, node);
