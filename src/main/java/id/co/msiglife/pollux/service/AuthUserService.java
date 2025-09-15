@@ -369,47 +369,58 @@ public class AuthUserService {
         }
     }
 
-    public List<MenuTreeDto> getMenuTreeByRoles(List<Integer> request) {
-        List<Map<String, Object>> rows = menuPlxRepository.findMenuTreeByRoles(request);
-        Map<Long, MenuTreeDto> nodeMap = new LinkedHashMap<>();
-        List<MenuTreeDto> roots = new ArrayList<>();
-        Map<Long, List<MenuTreeDto>> tempChild = new HashMap<>();
+	public List<MenuTreeDto> getMenuTreeByRoles(List<Integer> request) {
+		List<Map<String, Object>> rows = menuPlxRepository.findMenuTreeByRoles(request);
+		Map<Long, MenuTreeDto> nodeMap = new LinkedHashMap<>();
+		List<MenuTreeDto> roots = new ArrayList<>();
+		Map<Long, List<MenuTreeDto>> tempChild = new HashMap<>();
 
-        for (Map<String, Object> row : rows) {
-            Long id = ((Number) row.get("LSMP_ID")).longValue();
-            Long parentId = ((Number) row.get("PARENT_ID")).longValue();
-
-            MenuTreeDto node = new MenuTreeDto();
-            node.lsmp_id = id;
-            node.label = (String) row.get("LABEL");
-            node.path = (String) row.get("PATH");
-            node.type = ((Number) row.get("TYPE")).intValue();
-            node.icon = (String) row.get("ICON");
-            node.is_accessible = ((Number) row.get("IS_ACCESSIBLE")).intValue();
-            nodeMap.put(id, node);
-
-            // Simpan temp sementara jika parent belum ada
-            if (tempChild.containsKey(id)) {
-                node.children.addAll(tempChild.get(id));
-                tempChild.remove(id);
+		for (Map<String, Object> row : rows) {
+            Object valId = row.get("ID");
+            Long id = null;
+            if (valId != null) {
+                id = Long.parseLong(valId.toString());
             }
 
-            if (parentId == 0) {
-                roots.add(node);
-            } else {
-                MenuTreeDto parent = nodeMap.get(parentId);
-                if (parent != null) {
-                    parent.children.add(node);
-                } else {
-                    //cek udah ada di tempChild berdasarkan parent id
-                    if (!tempChild.containsKey(parentId)) {
-                        tempChild.put(parentId, new ArrayList<>());
-                    }
-                    tempChild.get(parentId).add(node);
-                }
+            Object val = row.get("PARENT_ID");
+            Long parentId = null;
+            if (val != null) {
+                parentId = Long.parseLong(val.toString());
             }
-        }
-        return roots;
-    }
+
+			MenuTreeDto node = new MenuTreeDto();
+			node.label = (String) row.get("LABEL");
+			node.path = (String) row.get("PATH");
+
+            Object valType = row.get("TYPE");
+            node.type = valType != null ? Integer.parseInt(valType.toString()) : 99;
+
+			node.icon = (String) row.get("ICON");
+			node.is_accessible = ((Number) row.get("IS_ACCESSIBLE")).intValue();
+			nodeMap.put(id, node);
+
+			// Simpan temp sementara jika parent belum ada
+			if (tempChild.containsKey(id)) {
+				node.children.addAll(tempChild.get(id));
+				tempChild.remove(id);
+			}
+
+			if (parentId == 0) {
+				roots.add(node);
+			} else {
+				MenuTreeDto parent = nodeMap.get(parentId);
+				if (parent != null) {
+					parent.children.add(node);
+				} else {
+					//cek udah ada di tempChild berdasarkan parent id
+					if (!tempChild.containsKey(parentId)) {
+						tempChild.put(parentId, new ArrayList<>());
+					}
+					tempChild.get(parentId).add(node);
+				}
+			}
+		}
+		return roots;
+	}
 
 }
