@@ -7,10 +7,8 @@ import java.sql.SQLException;
 import java.text.ParseException;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.List;
+import java.util.*;
+import java.util.stream.Collectors;
 import javax.persistence.Query;
 import javax.sql.DataSource;
 import javax.persistence.EntityManager;
@@ -19,16 +17,13 @@ import javax.persistence.PersistenceContext;
 import id.co.msiglife.pollux.dto.*;
 import id.co.msiglife.pollux.entity.Menu;
 import id.co.msiglife.pollux.entity.PolluxRoleAccessMenu;
-import id.co.msiglife.pollux.repository.MenuRepository;
-import id.co.msiglife.pollux.repository.RoleAccessMenuRepository;
+import id.co.msiglife.pollux.repository.*;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import id.co.msiglife.pollux.entity.User;
 import id.co.msiglife.pollux.entity.UserRole;
-import id.co.msiglife.pollux.repository.UserRepository;
-import id.co.msiglife.pollux.repository.UserRoleRepository;
 import id.co.msiglife.pollux.util.JwtUtil;
 import id.co.msiglife.pollux.util.StaticValue;
 import javax.transaction.Transactional;
@@ -43,6 +38,7 @@ public class AuthUserService {
 	private final JwtUtil jwtUtil;
 	private final MenuRepository menuRepository;
 	private final RoleAccessMenuRepository roleAccessMenuRepository;
+	private final MenuPlxRepository menuPlxRepository;
 	
 	@PersistenceContext
 	private EntityManager entityManager;
@@ -58,7 +54,7 @@ public class AuthUserService {
 		User user = userRepository.findByUsername(request.getUsername());
 		if (user != null) {
 			if (request.getPassword().equals(decryptPassword(user.getPassword()))) {
-				UserRole userRole = userRoleRepository.findByLusIdWithRoleAccess(user.getUserId());
+				List<UserRole> userRole = userRoleRepository.findByLusIdWithRoleAccessList(user.getUserId());
 				if (userRole != null) {
 					JwtUtil jwt = new JwtUtil();
 					String token = jwt.generate(user, userRole);
@@ -81,8 +77,13 @@ public class AuthUserService {
 
 
 	@Transactional
-	public LogoutUserResponse logout(LogoutUserRequest request) throws ParseException {
-		User user = userRepository.findByUsername(request.getUsername());
+	public LogoutUserResponse logout(String authToken) throws Exception {
+		if (authToken == null || authToken.isEmpty()) {
+			return createLogoutUserErrorResponse(HttpStatus.UNAUTHORIZED.value(), "Authorization token is missing or empty");
+		}
+
+		String username = jwtUtil.getUsernameFromJwtToken(authToken);
+		User user = userRepository.findByUsername(username);
 		if(user != null) {
 			// commented for login lus active keep deactivating issue - 16-01-2025
 //			updateLusNonActive(user);
@@ -201,13 +202,20 @@ public class AuthUserService {
 	}
 
 	// RESPONSE LOGIN USER 
-	private LoginUserResponse createLoginUserResponse(String token, UserRole userRole, User user) {
+	private LoginUserResponse createLoginUserResponse(String token, List<UserRole> userRoles, User user) {
 		HashMap<String, Object> dataResp = new HashMap<String, Object>();
 		dataResp.put("token", token);
 		dataResp.put("is_expired", false);
 		dataResp.put("is_first_login", false);
-		dataResp.put("role_id", userRole.getRoleId());
+		dataResp.put("expired_at", jwtUtil.getExpirationDateFromToken(token).getTime());
+		//dataResp.put("role_id", userRole.getRoleId());
+		List<Integer> roleIds = userRoles.stream()
+				.map(UserRole::getRoleId)
+				.collect(Collectors.toList());
+		dataResp.put("role_id", roleIds);
 		dataResp.put("full_name", user.getLusFullName());
+		dataResp.put("user_id", user.getUserId());
+		dataResp.put("list_menu_access", getMenuTreeByRoles(roleIds));
 		
 		return LoginUserResponse.builder()
 				.code(HttpStatus.OK.value())
@@ -246,17 +254,26 @@ public class AuthUserService {
 
 	public TokenCheckResponseDTO checkToken(String token) {
 		boolean isExpired = isTokenExpired(token);
-		Integer roleId = null;
+		String fullname = jwtUtil.getFullnameFromJwtToken(token);
+		Long expiredAt = jwtUtil.getExpirationDateFromToken(token).getTime();
+		Long userId = jwtUtil.getAllClaimsFromToken(token).get("user_id", Long.class);
+		List<Integer> roleId = null;
+		List<MenuTreeDto> menuTreeDtos = null;
 
 		if (!isExpired) {
 			roleId = jwtUtil.getRoleIdFromJwtToken(token);
+			menuTreeDtos = getMenuTreeByRoles(roleId);
 		}
 
 		TokenDataDTO tokenData = TokenDataDTO.builder()
 				.isFirstLogin(false)
 				.isExpired(isExpired)
 				.roleId(roleId)
+				.fullName(fullname)
+				.expiredAt(expiredAt)
+				.userId(userId)
 				.token(token)
+				.menuTreeDtos(menuTreeDtos)
 				.build();
 
 		TokenCheckResponseDTO responseDTO = TokenCheckResponseDTO.builder()
@@ -274,8 +291,10 @@ public class AuthUserService {
 
 	public CheckRoleResponse checkRoleAccess(CheckRoleRequest request) {
 
-		int roleId = request.getRoleId();
+		List<Integer> roleId = request.getRoleId();
+
 		List<PolluxRoleAccessMenu> roleAccessMenu = roleAccessMenuRepository.getRoleAccessMenu(roleId);
+
 		if(roleAccessMenu.size() > 0) {
 			List<HashMap<String, Object>> menuList = new ArrayList<HashMap<String,Object>>();
 			HashMap<String, Object> menuMap;
@@ -309,7 +328,7 @@ public class AuthUserService {
 	}
 
 	// RESPONSE CHECK ROLE ACCESS LIST
-	private CheckRoleResponse createCheckRoleAccessResponse(int code, String message, List<HashMap<String, Object>> menuList, int roleId) {
+	private CheckRoleResponse createCheckRoleAccessResponse(int code, String message, List<HashMap<String, Object>> menuList, List<Integer> roleId) {
 		return CheckRoleResponse.builder()
 				.code(code)
 				.message(message)
@@ -318,7 +337,7 @@ public class AuthUserService {
 				.build();
 	}
 
-	private CheckRoleResponse createCheckRoleAccessErrorResponse(int code, String message, int roleId) {
+	private CheckRoleResponse createCheckRoleAccessErrorResponse(int code, String message, List<Integer> roleId) {
 		return CheckRoleResponse.builder()
 				.code(code)
 				.message(message)
@@ -333,6 +352,60 @@ public class AuthUserService {
 		} else {
 			return false;
 		}
+	}
+
+	public List<MenuTreeDto> getMenuTreeByRoles(List<Integer> request) {
+		List<Map<String, Object>> rows = menuPlxRepository.findMenuTreeByRoles(request);
+		Map<Long, MenuTreeDto> nodeMap = new LinkedHashMap<>();
+		List<MenuTreeDto> roots = new ArrayList<>();
+		Map<Long, List<MenuTreeDto>> tempChild = new HashMap<>();
+
+		for (Map<String, Object> row : rows) {
+            Object valId = row.get("ID");
+            Long id = null;
+            if (valId != null) {
+                id = Long.parseLong(valId.toString());
+            }
+
+            Object val = row.get("PARENT_ID");
+            Long parentId = null;
+            if (val != null) {
+                parentId = Long.parseLong(val.toString());
+            }
+
+			MenuTreeDto node = new MenuTreeDto();
+			node.label = (String) row.get("LABEL");
+			node.path = (String) row.get("PATH");
+
+            Object valType = row.get("TYPE");
+            node.type = valType != null ? Integer.parseInt(valType.toString()) : 99;
+
+			node.icon = (String) row.get("ICON");
+			node.is_accessible = ((Number) row.get("IS_ACCESSIBLE")).intValue();
+			nodeMap.put(id, node);
+
+			// Simpan temp sementara jika parent belum ada
+			if (tempChild.containsKey(id)) {
+				node.children.addAll(tempChild.get(id));
+				tempChild.remove(id);
+			}
+
+			if (parentId == 0) {
+				roots.add(node);
+			} else {
+				MenuTreeDto parent = nodeMap.get(parentId);
+				if (parent != null) {
+					parent.children.add(node);
+				} else {
+					//cek udah ada di tempChild berdasarkan parent id
+					if (!tempChild.containsKey(parentId)) {
+						tempChild.put(parentId, new ArrayList<>());
+					}
+					tempChild.get(parentId).add(node);
+				}
+			}
+		}
+		return roots;
 	}
 
 }
