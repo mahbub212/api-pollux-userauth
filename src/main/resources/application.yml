@@ -9,11 +9,11 @@ spring:
 
 eureka:
   instance:
-    preferIpAddress: false
+    preferIpAddress: true
     hostname: api-pollux-userauth
   client:
-    registerWithEureka: false
-    fetchRegistry: false
+    registerWithEureka: true
+    fetchRegistry: true
     serviceUrl:
       defaultZone: http://eureka-0.eureka.cosmos.svc.cluster.local:8080/eureka,http://eureka-1.eureka.cosmos.svc.cluster.local:8080/eureka,http://eureka-2.eureka.cosmos.svc.cluster.local:8080/eureka,http://eureka-3.eureka.cosmos.svc.cluster.local:8080/eureka
       #defaultZone: http://localhost:8080/eureka
