@@ -38,7 +38,6 @@ public class AuthUserService {
 	private final JwtUtil jwtUtil;
 	private final MenuRepository menuRepository;
 	private final RoleAccessMenuRepository roleAccessMenuRepository;
-	private final MenuPlxRepository menuPlxRepository;
 	
 	@PersistenceContext
 	private EntityManager entityManager;
@@ -355,7 +354,7 @@ public class AuthUserService {
 	}
 
 	public List<MenuTreeDto> getMenuTreeByRoles(List<Integer> request) {
-		List<Map<String, Object>> rows = menuPlxRepository.findMenuTreeByRoles(request);
+		List<Map<String, Object>> rows = menuRepository.findMenuTreeByRoles(request);
 		Map<Long, MenuTreeDto> nodeMap = new LinkedHashMap<>();
 		List<MenuTreeDto> roots = new ArrayList<>();
 		Map<Long, List<MenuTreeDto>> tempChild = new HashMap<>();
