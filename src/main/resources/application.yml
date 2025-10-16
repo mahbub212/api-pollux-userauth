@@ -3,7 +3,7 @@ server:
 
 spring:
   profiles:
-    active: prod
+    active: dev
   application:
     name: api-pollux-userauth
 
@@ -71,7 +71,7 @@ spring:
     url: jdbc:oracle:thin:@128.21.23.31:1521:AJSDB?oracle.jdbc.timezoneAsRegion=false
     username: POLLUXDEV
     password: ENC(jVMxRnPsWT4LERlNv4DaljN4mx0fI+LB)
-    driver-class-name: oracle.jdbc.OracleDriver
+    driver-class-name: oracle.jdbc.driver.OracleDriver
     hikari:
       auto-commit: true
       idle-timeout: 10000
