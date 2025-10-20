@@ -47,7 +47,6 @@ public class AuthUserService {
     private final JwtUtil jwtUtil;
     private final MenuRepository menuRepository;
     private final RoleAccessMenuRepository roleAccessMenuRepository;
-    private final MenuPlxRepository menuPlxRepository;
 
     @PersistenceContext
     private EntityManager entityManager;
