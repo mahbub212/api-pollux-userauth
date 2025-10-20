@@ -370,7 +370,7 @@ public class AuthUserService {
     }
 
 	public List<MenuTreeDto> getMenuTreeByRoles(List<Integer> request) {
-		List<Map<String, Object>> rows = menuPlxRepository.findMenuTreeByRoles(request);
+		List<Map<String, Object>> rows = menuRepository.findMenuTreeByRoles(request);
 		Map<Long, MenuTreeDto> nodeMap = new LinkedHashMap<>();
 		List<MenuTreeDto> roots = new ArrayList<>();
 		Map<Long, List<MenuTreeDto>> tempChild = new HashMap<>();
