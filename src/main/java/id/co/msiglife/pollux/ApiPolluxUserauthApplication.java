@@ -1,5 +1,6 @@
 package id.co.msiglife.pollux;
 
+import com.ulisesbocchio.jasyptspringboot.annotation.EnableEncryptableProperties;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.CommandLineRunner;
@@ -9,6 +10,7 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 import javax.sql.DataSource;
 
 @SpringBootApplication
+@EnableEncryptableProperties
 public class ApiPolluxUserauthApplication implements CommandLineRunner {
 
 	@Value("${spring.profiles.active}")
