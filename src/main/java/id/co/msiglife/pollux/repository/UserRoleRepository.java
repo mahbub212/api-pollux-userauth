@@ -10,11 +10,11 @@ import java.util.List;
 
 public interface UserRoleRepository extends JpaRepository<UserRole, CompUserRole> {
 
-	@Query("SELECT ur FROM UserRole ur WHERE ur.lusId = :lusId AND EXISTS " +
+	@Query("SELECT ur FROM UserRole ur WHERE ur.lusId = :lusId AND ur.flagAktif = 1 AND EXISTS " +
 			"(SELECT DISTINCT ura.roleId FROM PolluxRoleAccessMenu ura WHERE ura.roleId = ur.roleId)")
 	UserRole findByLusIdWithRoleAccess(@Param("lusId") Long lusId);
 
-	@Query("SELECT ur FROM UserRole ur WHERE ur.lusId = :lusId AND EXISTS " +
+	@Query("SELECT ur FROM UserRole ur WHERE ur.lusId = :lusId AND ur.flagAktif = 1 AND EXISTS " +
 			"(SELECT DISTINCT ura.roleId FROM PolluxRoleAccessMenu ura WHERE ura.roleId = ur.roleId)")
 	List<UserRole> findByLusIdWithRoleAccessList(@Param("lusId") Long lusId);
 		
