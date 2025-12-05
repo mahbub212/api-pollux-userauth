@@ -8,6 +8,7 @@ import java.text.ParseException;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.util.*;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 import javax.persistence.Query;
 import javax.sql.DataSource;
@@ -419,7 +420,24 @@ public class AuthUserService {
 				}
 			}
 		}
-		return roots;
+        return sortMenu(roots);
 	}
+
+
+    private List<MenuTreeDto> sortMenu(List<MenuTreeDto> menu){
+
+        List<String> customOrder = Arrays.asList("Master Data", "SPAJK Search", "SPAJK Data Entry", "Workbasket", "Billing Information");
+
+            Map<String, Integer> orderMap = new HashMap<>();
+            for (int i = 0; i < customOrder.size(); i++) {
+                orderMap.put(customOrder.get(i), i);
+            }
+
+            menu.sort(Comparator.comparingInt(m ->
+                    orderMap.getOrDefault(m.label, Integer.MAX_VALUE)
+            ));
+
+        return menu;
+    }
 
 }
