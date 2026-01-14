@@ -39,13 +39,13 @@ spec:
               cpu: "2000m"
           readinessProbe:
             httpGet:
-              path: /actuator/health
+              path: /actuator/health/db
               port: 9091
             initialDelaySeconds: 10
             periodSeconds: 30
           livenessProbe:
             httpGet:
-              path: /actuator/health
+              path: /actuator/health/db
               port: 9091
             failureThreshold: 10
             periodSeconds: 30
