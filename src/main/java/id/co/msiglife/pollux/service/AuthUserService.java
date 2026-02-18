@@ -1,56 +1,51 @@
 package id.co.msiglife.pollux.service;
 
+import id.co.msiglife.pollux.dto.*;
+import id.co.msiglife.pollux.dto.passwordcomplexity.ChangePasswordData;
+import id.co.msiglife.pollux.dto.passwordcomplexity.LockCheckData;
+import id.co.msiglife.pollux.dto.passwordcomplexity.LoginAttemptData;
+import id.co.msiglife.pollux.dto.passwordcomplexity.PasswordComplexityApiResponse;
+import id.co.msiglife.pollux.entity.Menu;
+import id.co.msiglife.pollux.entity.PolluxRoleAccessMenu;
+import id.co.msiglife.pollux.entity.User;
+import id.co.msiglife.pollux.entity.UserRole;
+import id.co.msiglife.pollux.repository.MenuRepository;
+import id.co.msiglife.pollux.repository.RoleAccessMenuRepository;
+import id.co.msiglife.pollux.repository.UserRepository;
+import id.co.msiglife.pollux.repository.UserRoleRepository;
+import id.co.msiglife.pollux.util.JwtUtil;
+import id.co.msiglife.pollux.util.StaticValue;
+import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.HttpStatus;
+import org.springframework.stereotype.Service;
+
+import javax.persistence.EntityManager;
+import javax.persistence.PersistenceContext;
+import javax.sql.DataSource;
+import javax.transaction.Transactional;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.text.ParseException;
-import java.time.ZoneId;
-import java.time.ZonedDateTime;
 import java.util.*;
-import java.util.function.Function;
 import java.util.stream.Collectors;
-import javax.persistence.Query;
-import javax.sql.DataSource;
-import javax.persistence.EntityManager;
-import javax.persistence.PersistenceContext;
-
-import id.co.msiglife.pollux.dto.*;
-import id.co.msiglife.pollux.entity.Menu;
-import id.co.msiglife.pollux.entity.PolluxRoleAccessMenu;
-import id.co.msiglife.pollux.repository.*;
-import id.co.msiglife.pollux.exception.InactiveException;
-import id.co.msiglife.pollux.exception.IncorrectPasswordException;
-import id.co.msiglife.pollux.exception.NotFoundException;
-import id.co.msiglife.pollux.repository.MenuRepository;
-import id.co.msiglife.pollux.repository.RoleAccessMenuRepository;
-import id.co.msiglife.pollux.util.WorkFlowProcessIdStaticValue;
-import lombok.RequiredArgsConstructor;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.http.HttpStatus;
-import org.springframework.stereotype.Service;
-import id.co.msiglife.pollux.entity.User;
-import id.co.msiglife.pollux.entity.UserRole;
-import id.co.msiglife.pollux.repository.UserRepository;
-import id.co.msiglife.pollux.repository.UserRoleRepository;
-import id.co.msiglife.pollux.util.JwtUtil;
-import id.co.msiglife.pollux.util.StaticValue;
-import javax.transaction.Transactional;
 
 @Service
 @RequiredArgsConstructor
 public class AuthUserService {
 
-    private final DataSource dataSource;
-    private final UserRepository userRepository;
-    private final UserRoleRepository userRoleRepository;
-    private final JwtUtil jwtUtil;
-    private final MenuRepository menuRepository;
-    private final RoleAccessMenuRepository roleAccessMenuRepository;
+	private final DataSource dataSource;
+	private final UserRepository userRepository;
+	private final UserRoleRepository userRoleRepository;
+	private final JwtUtil jwtUtil;
+	private final MenuRepository menuRepository;
+	private final RoleAccessMenuRepository roleAccessMenuRepository;
+	private final PasswordComplexityService passwordComplexityService;
 
-    @PersistenceContext
-    private EntityManager entityManager;
+	@PersistenceContext
+	private EntityManager entityManager;
 
     @Value("${custom.timeout.alert}")
     private int alertTimeoutInSeconds;
@@ -58,35 +53,60 @@ public class AuthUserService {
     @Value("${custom.timeout.actual}")
     private int actualTimeoutInSeconds;
 
-    @Transactional
-    public LoginUserResponse login(LoginUserRequest request) throws ParseException {
-        User user = userRepository.findByUsername(request.getUsername());
-        if (user != null) {
-            if (request.getPassword().equals(decryptPassword(user.getPassword()))) {
-                List<UserRole> userRole = userRoleRepository.findByLusIdWithRoleAccessList(user.getUserId());
-                if (userRole != null) {
-                    JwtUtil jwt = new JwtUtil();
-                    String token = jwt.generate(user, userRole);
-                    if (isUserActive(user)) {
-                        updateLussOnline(user);
-                        return createLoginUserResponse(token, userRole, user);
-                    } else {
-//                        throw new InactiveException(StaticValue.LOGIN_MSG_RESP_INACTIVE, WorkFlowProcessIdStaticValue.LOGIN_PROCESS_ID);
-                        return createLoginUserErrorResponse(StaticValue.LOGIN_CODE_RESP_INACTIVE, StaticValue.LOGIN_MSG_RESP_INACTIVE);
-                    }
-                } else {
-//                    throw new NotFoundException(StaticValue.LOGIN_MSG_RESP_NOT_FOUND, WorkFlowProcessIdStaticValue.LOGIN_PROCESS_ID);
-                    return createLoginUserErrorResponse(StaticValue.LOGIN_CODE_RESP_NOT_FOUND, StaticValue.LOGIN_MSG_RESP_NOT_FOUND + " in POLLUX");
-                }
-            } else {
-//                throw new IncorrectPasswordException(StaticValue.LOGIN_MSG_RESP_INCORRECT_PASSWORD, WorkFlowProcessIdStaticValue.LOGIN_PROCESS_ID);
-                return createLoginUserErrorResponse(StaticValue.LOGIN_CODE_RESP_INCORRECT_PASSWORD, StaticValue.LOGIN_MSG_RESP_INCORRECT_PASSWORD);
-            }
-        } else {
-//            throw new NotFoundException(StaticValue.LOGIN_MSG_RESP_NOT_FOUND, WorkFlowProcessIdStaticValue.LOGIN_PROCESS_ID);
-            return createLoginUserErrorResponse(StaticValue.LOGIN_CODE_RESP_NOT_FOUND, StaticValue.LOGIN_MSG_RESP_NOT_FOUND);
-        }
-    }
+	@Transactional
+	public LoginUserResponse login(LoginUserRequest request) throws ParseException {
+		User user = userRepository.findByUsername(request.getUsername());
+		if (user == null) {
+            // throw new NotFoundException(StaticValue.LOGIN_MSG_RESP_NOT_FOUND, WorkFlowProcessIdStaticValue.LOGIN_PROCESS_ID);
+			return createLoginUserErrorResponse(
+					StaticValue.LOGIN_CODE_RESP_NOT_FOUND,
+					StaticValue.LOGIN_MSG_RESP_NOT_FOUND
+			);
+		}
+
+		// check blocked user
+		PasswordComplexityApiResponse<LockCheckData> lockCheckResponse = passwordComplexityService.checkAccountLock(user.getUsername());
+
+		if (lockCheckResponse != null && lockCheckResponse.getData() != null && lockCheckResponse.getData().getIsBlokir()) {
+			return createLoginUserErrorResponse(
+					StaticValue.BLOCKED_ACCOUNT_CODE,
+					StaticValue.BLOCKED_ACCOUNT_MSG
+			);
+		}
+
+		if (!request.getPassword().equals(decryptPassword(user.getPassword()))) {
+			// Hit Login Attempt
+			PasswordComplexityApiResponse<LoginAttemptData> loginAttemptResponse = passwordComplexityService.attemptLogin(request.getUsername());
+            // throw new IncorrectPasswordException(StaticValue.LOGIN_MSG_RESP_INCORRECT_PASSWORD, WorkFlowProcessIdStaticValue.LOGIN_PROCESS_ID);
+			return createLoginUserErrorResponse(
+					StaticValue.LOGIN_CODE_RESP_INCORRECT_PASSWORD,
+                    StaticValue.LOGIN_MSG_RESP_INCORRECT_PASSWORD + " | " + loginAttemptResponse.getMessage()
+			);
+		}
+
+		List<UserRole> userRole = userRoleRepository.findByLusIdWithRoleAccessList(user.getUserId());
+		if (userRole == null) {
+            // throw new NotFoundException(StaticValue.LOGIN_MSG_RESP_NOT_FOUND, WorkFlowProcessIdStaticValue.LOGIN_PROCESS_ID);
+			return createLoginUserErrorResponse(
+					StaticValue.LOGIN_CODE_RESP_NOT_FOUND,
+					StaticValue.LOGIN_MSG_RESP_NOT_FOUND + " in POLLUX"
+			);
+		}
+
+		if (!isUserActive(user)) {
+            // throw new InactiveException(StaticValue.LOGIN_MSG_RESP_INACTIVE, WorkFlowProcessIdStaticValue.LOGIN_PROCESS_ID);
+			return createLoginUserErrorResponse(
+					StaticValue.LOGIN_CODE_RESP_INACTIVE,
+					StaticValue.LOGIN_MSG_RESP_INACTIVE
+			);
+		}
+
+		JwtUtil jwt = new JwtUtil();
+		String token = jwt.generate(user, userRole);
+
+		updateLussOnline(user);
+		return createLoginUserResponse(token, userRole, user);
+	}
 
 
     @Transactional
@@ -440,4 +460,54 @@ public class AuthUserService {
         return menu;
     }
 
+
+	@Transactional
+	public ChangePasswordResponse changePassword(String token) {
+
+		// validate input
+		if (token == null || token.isEmpty()) {
+			return ChangePasswordResponse.builder()
+					.code(HttpStatus.UNAUTHORIZED.value())
+					.message("Authorization token is missing or empty")
+					.build();
+		}
+
+		// Extract username from token
+		boolean isExpired = isTokenExpired(token);
+		Long userId = jwtUtil.getAllClaimsFromToken(token).get("user_id", Long.class);
+		String username =  jwtUtil.getUsernameFromJwtToken(token);
+		if (userId == null || isExpired) {
+			return ChangePasswordResponse.builder()
+					.code(HttpStatus.UNAUTHORIZED.value())
+					.message("Unauthorized or token expired")
+					.build();
+		}
+
+		User user = userRepository.findById(userId).orElse(null);
+		if (user == null) {
+			return ChangePasswordResponse.builder()
+					.code(HttpStatus.UNAUTHORIZED.value())
+					.message("User not found")
+					.build();
+		}
+
+		// CHANGE PASSWORD
+		PasswordComplexityApiResponse<ChangePasswordData> changePasswordResponse = passwordComplexityService.changePassword(username);
+
+		if (changePasswordResponse.isError()) {
+			return ChangePasswordResponse.builder()
+					.code(HttpStatus.INTERNAL_SERVER_ERROR.value())
+					.message(changePasswordResponse.getMessage())
+					.build();
+		}
+
+		HashMap<String, Object> dataResp = new HashMap<String, Object>();
+		dataResp.put("url", changePasswordResponse.getData().getUrl());
+
+        return ChangePasswordResponse.builder()
+                .code(HttpStatus.OK.value())
+                .message(changePasswordResponse.getMessage())
+				.data(dataResp)
+                .build();
+    }
 }
