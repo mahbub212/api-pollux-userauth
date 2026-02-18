@@ -18,17 +18,15 @@ import id.co.msiglife.pollux.util.StaticValue;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 
-import javax.persistence.EntityManager;
-import javax.persistence.PersistenceContext;
 import javax.sql.DataSource;
 import javax.transaction.Transactional;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.text.ParseException;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -44,9 +42,6 @@ public class AuthUserService {
 	private final RoleAccessMenuRepository roleAccessMenuRepository;
 	private final PasswordComplexityService passwordComplexityService;
 
-	@PersistenceContext
-	private EntityManager entityManager;
-
     @Value("${custom.timeout.alert}")
     private int alertTimeoutInSeconds;
 
@@ -54,10 +49,9 @@ public class AuthUserService {
     private int actualTimeoutInSeconds;
 
 	@Transactional
-	public LoginUserResponse login(LoginUserRequest request) throws ParseException {
+	public LoginUserResponse login(LoginUserRequest request) {
 		User user = userRepository.findByUsername(request.getUsername());
 		if (user == null) {
-            // throw new NotFoundException(StaticValue.LOGIN_MSG_RESP_NOT_FOUND, WorkFlowProcessIdStaticValue.LOGIN_PROCESS_ID);
 			return createLoginUserErrorResponse(
 					StaticValue.LOGIN_CODE_RESP_NOT_FOUND,
 					StaticValue.LOGIN_MSG_RESP_NOT_FOUND
@@ -65,9 +59,16 @@ public class AuthUserService {
 		}
 
 		// check blocked user
-		PasswordComplexityApiResponse<LockCheckData> lockCheckResponse = passwordComplexityService.checkAccountLock(user.getUsername());
+		ResponseEntity<PasswordComplexityApiResponse<LockCheckData>> lockCheckResponse = passwordComplexityService.checkAccountLock(user.getUsername());
 
-		if (lockCheckResponse != null && lockCheckResponse.getData() != null && lockCheckResponse.getData().getIsBlokir()) {
+        if (lockCheckResponse == null || lockCheckResponse.getBody() == null) {
+            return createLoginUserErrorResponse(
+                    HttpStatus.INTERNAL_SERVER_ERROR.value(),
+                    "no response from password service"
+            );
+        }
+
+		if (lockCheckResponse.getBody().getData().getIsBlokir()) {
 			return createLoginUserErrorResponse(
 					StaticValue.BLOCKED_ACCOUNT_CODE,
 					StaticValue.BLOCKED_ACCOUNT_MSG
@@ -76,17 +77,23 @@ public class AuthUserService {
 
 		if (!request.getPassword().equals(decryptPassword(user.getPassword()))) {
 			// Hit Login Attempt
-			PasswordComplexityApiResponse<LoginAttemptData> loginAttemptResponse = passwordComplexityService.attemptLogin(request.getUsername());
-            // throw new IncorrectPasswordException(StaticValue.LOGIN_MSG_RESP_INCORRECT_PASSWORD, WorkFlowProcessIdStaticValue.LOGIN_PROCESS_ID);
+			ResponseEntity<PasswordComplexityApiResponse<LoginAttemptData>> loginAttemptResponse = passwordComplexityService.attemptLogin(request.getUsername());
+
+            if (loginAttemptResponse == null || loginAttemptResponse.getBody() == null) {
+                return createLoginUserErrorResponse(
+                        HttpStatus.INTERNAL_SERVER_ERROR.value(),
+                        "no response from password service"
+                );
+            }
+
 			return createLoginUserErrorResponse(
 					StaticValue.LOGIN_CODE_RESP_INCORRECT_PASSWORD,
-                    StaticValue.LOGIN_MSG_RESP_INCORRECT_PASSWORD + " | " + loginAttemptResponse.getMessage()
+                    StaticValue.LOGIN_MSG_RESP_INCORRECT_PASSWORD + " | " + loginAttemptResponse.getBody().getMessage()
 			);
 		}
 
 		List<UserRole> userRole = userRoleRepository.findByLusIdWithRoleAccessList(user.getUserId());
 		if (userRole == null) {
-            // throw new NotFoundException(StaticValue.LOGIN_MSG_RESP_NOT_FOUND, WorkFlowProcessIdStaticValue.LOGIN_PROCESS_ID);
 			return createLoginUserErrorResponse(
 					StaticValue.LOGIN_CODE_RESP_NOT_FOUND,
 					StaticValue.LOGIN_MSG_RESP_NOT_FOUND + " in POLLUX"
@@ -94,7 +101,6 @@ public class AuthUserService {
 		}
 
 		if (!isUserActive(user)) {
-            // throw new InactiveException(StaticValue.LOGIN_MSG_RESP_INACTIVE, WorkFlowProcessIdStaticValue.LOGIN_PROCESS_ID);
 			return createLoginUserErrorResponse(
 					StaticValue.LOGIN_CODE_RESP_INACTIVE,
 					StaticValue.LOGIN_MSG_RESP_INACTIVE
@@ -492,21 +498,28 @@ public class AuthUserService {
 		}
 
 		// CHANGE PASSWORD
-		PasswordComplexityApiResponse<ChangePasswordData> changePasswordResponse = passwordComplexityService.changePassword(username);
+		ResponseEntity<PasswordComplexityApiResponse<ChangePasswordData>> changePasswordResponse = passwordComplexityService.changePassword(username);
 
-		if (changePasswordResponse.isError()) {
+        if (changePasswordResponse == null || changePasswordResponse.getBody() == null) {
+            return ChangePasswordResponse.builder()
+                    .code(HttpStatus.INTERNAL_SERVER_ERROR.value())
+                    .message("no response from password service")
+                    .build();
+        }
+
+		if (changePasswordResponse.getBody().isError()) {
 			return ChangePasswordResponse.builder()
-					.code(HttpStatus.INTERNAL_SERVER_ERROR.value())
-					.message(changePasswordResponse.getMessage())
+					.code(changePasswordResponse.getStatusCodeValue())
+					.message(changePasswordResponse.getBody().getMessage())
 					.build();
 		}
 
 		HashMap<String, Object> dataResp = new HashMap<String, Object>();
-		dataResp.put("url", changePasswordResponse.getData().getUrl());
+        dataResp.put("url", changePasswordResponse.getBody().getData().getUrl());
 
         return ChangePasswordResponse.builder()
                 .code(HttpStatus.OK.value())
-                .message(changePasswordResponse.getMessage())
+                .message(changePasswordResponse.getBody().getMessage())
 				.data(dataResp)
                 .build();
     }
