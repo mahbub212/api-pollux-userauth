@@ -8,7 +8,7 @@ public class StaticValue {
 	 public final static int LOGIN_CODE_RESP_NOT_FOUND = 404;
 	 public final static int CHECK_ROLE_CODE_RESP_SUCCESS = 200;
 	 public final static int CHECK_ROLE_CODE_RESP_NOT_FOUND = 404;
-	 public final static int BLOCKED_ACCOUNT_CODE = 401;
+	 public final static int BLOCKED_ACCOUNT_CODE = 423;
 	 
 	 public final static String LOGIN_MSG_RESP_SUCCESS = "Login Success";
 	 public final static String LOGIN_MSG_RESP_INACTIVE = "User is Inactive or Locked";
