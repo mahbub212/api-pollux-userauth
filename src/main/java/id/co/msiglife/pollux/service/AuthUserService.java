@@ -58,23 +58,6 @@ public class AuthUserService {
 			);
 		}
 
-		// check blocked user
-		ResponseEntity<PasswordComplexityApiResponse<LockCheckData>> lockCheckResponse = passwordComplexityService.checkAccountLock(user.getUsername());
-
-        if (lockCheckResponse == null || lockCheckResponse.getBody() == null) {
-            return createLoginUserErrorResponse(
-                    HttpStatus.INTERNAL_SERVER_ERROR.value(),
-                    "no response from password service"
-            );
-        }
-
-		if (lockCheckResponse.getBody().getData().getIsBlokir()) {
-			return createLoginUserErrorResponse(
-					StaticValue.BLOCKED_ACCOUNT_CODE,
-					StaticValue.BLOCKED_ACCOUNT_MSG
-			);
-		}
-
 		if (!request.getPassword().equals(decryptPassword(user.getPassword()))) {
 			// Hit Login Attempt
 			ResponseEntity<PasswordComplexityApiResponse<LoginAttemptData>> loginAttemptResponse = passwordComplexityService.attemptLogin(request.getUsername());
@@ -106,6 +89,23 @@ public class AuthUserService {
 					StaticValue.LOGIN_MSG_RESP_INACTIVE
 			);
 		}
+
+        // check blocked user
+        ResponseEntity<PasswordComplexityApiResponse<LockCheckData>> lockCheckResponse = passwordComplexityService.checkAccountLock(user.getUsername());
+
+        if (lockCheckResponse == null || lockCheckResponse.getBody() == null) {
+            return createLoginUserErrorResponse(
+                    HttpStatus.INTERNAL_SERVER_ERROR.value(),
+                    "no response from password service"
+            );
+        }
+
+        if (lockCheckResponse.getBody().getData().getIsBlokir()) {
+            return createLoginUserErrorResponse(
+                    StaticValue.BLOCKED_ACCOUNT_CODE,
+                    StaticValue.BLOCKED_ACCOUNT_MSG
+            );
+        }
 
 		JwtUtil jwt = new JwtUtil();
 		String token = jwt.generate(user, userRole);
@@ -480,14 +480,14 @@ public class AuthUserService {
 
 		// Extract username from token
 		boolean isExpired = isTokenExpired(token);
+        if (isExpired) {
+            return ChangePasswordResponse.builder()
+                    .code(HttpStatus.UNAUTHORIZED.value())
+                    .message("Unauthorized or token expired")
+                    .build();
+        }
 		Long userId = jwtUtil.getAllClaimsFromToken(token).get("user_id", Long.class);
 		String username =  jwtUtil.getUsernameFromJwtToken(token);
-		if (userId == null || isExpired) {
-			return ChangePasswordResponse.builder()
-					.code(HttpStatus.UNAUTHORIZED.value())
-					.message("Unauthorized or token expired")
-					.build();
-		}
 
 		User user = userRepository.findById(userId).orElse(null);
 		if (user == null) {
