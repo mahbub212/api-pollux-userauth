@@ -27,6 +27,8 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -101,9 +103,15 @@ public class AuthUserService {
         }
 
         if (lockCheckResponse.getBody().getData().getIsBlokir()) {
+
+            DateTimeFormatter inputFmt = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm:ss");
+            DateTimeFormatter outputFmt = DateTimeFormatter.ofPattern("dd MMM yyyy, HH:mm", Locale.ENGLISH);
+            LocalDateTime dt = LocalDateTime.parse(lockCheckResponse.getBody().getData().getUnblockDate(), inputFmt);
+
+            String unblockDate = dt.format(outputFmt);
             return createLoginUserErrorResponse(
                     StaticValue.BLOCKED_ACCOUNT_CODE,
-                    StaticValue.BLOCKED_ACCOUNT_MSG
+                    StaticValue.BLOCKED_ACCOUNT_MSG + unblockDate
             );
         }
 
