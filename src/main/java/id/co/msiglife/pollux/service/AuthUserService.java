@@ -16,6 +16,7 @@ import id.co.msiglife.pollux.repository.UserRoleRepository;
 import id.co.msiglife.pollux.util.JwtUtil;
 import id.co.msiglife.pollux.util.StaticValue;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -34,6 +35,7 @@ import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class AuthUserService {
 
 	private final DataSource dataSource;
@@ -113,6 +115,20 @@ public class AuthUserService {
                     StaticValue.BLOCKED_ACCOUNT_CODE,
                     StaticValue.BLOCKED_ACCOUNT_MSG + unblockDate
             );
+        }
+
+        // clear login attempt
+        ResponseEntity<PasswordComplexityApiResponse<LockCheckData>> clearLoginResponse = passwordComplexityService.clearLoginAttempt(user.getUsername());
+
+        if (clearLoginResponse == null || clearLoginResponse.getBody() == null) {
+            return createLoginUserErrorResponse(
+                    HttpStatus.INTERNAL_SERVER_ERROR.value(),
+                    "no response from password service"
+            );
+        }
+
+        if (clearLoginResponse.getStatusCodeValue() != 200) {
+            log.info("Clear login attempt status code {} | message: {}", clearLoginResponse.getStatusCodeValue(), clearLoginResponse.getBody().getMessage());
         }
 
 		JwtUtil jwt = new JwtUtil();
