@@ -54,6 +54,33 @@ public class PasswordComplexityService {
         }
     }
 
+    public ResponseEntity<PasswordComplexityApiResponse<LockCheckData>> clearLoginAttempt(String username) {
+        String url = baseUrl + "/v1/account/login/clear";
+        PasswordComplexityRequest req = PasswordComplexityRequest.builder()
+                .username(username)
+                .jenisApp(appType)
+                .build();
+
+        try {
+            HttpEntity<Object> entity = new HttpEntity<>(req, headers());
+
+            ParameterizedTypeReference<PasswordComplexityApiResponse<LockCheckData>> responseType =
+                    new ParameterizedTypeReference<PasswordComplexityApiResponse<LockCheckData>>() {
+                    };
+
+            return restTemplate.exchange(url, HttpMethod.POST, entity, responseType);
+
+        } catch (Exception e) {
+            log.error("POST {} failed: {}", url, e.getMessage(), e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(PasswordComplexityApiResponse.<LockCheckData>builder()
+                    .message("Unexpected error calling " + url + " " + e.getMessage())
+                    .data(null)
+                    .error(true)
+                    .build()
+            );
+        }
+    }
+
 
     public ResponseEntity<PasswordComplexityApiResponse<LockCheckData>> checkAccountLock(String username) {
         String url = baseUrl + "/v1/account/login/block";
