@@ -109,9 +109,9 @@ spring:
     hikari:
       auto-commit: true
       idle-timeout: 10000
-      maximum-pool-size: 5
+      maximum-pool-size: 15
       max-lifetime: 30000
-      minimum-idle: 1
+      minimum-idle: 10
       connection-timeout: 30000
   jpa:
     hibernate:
