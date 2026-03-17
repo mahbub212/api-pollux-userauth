@@ -64,18 +64,22 @@ public class AuthUserService {
 
 		if (!request.getPassword().equals(decryptPassword(user.getPassword()))) {
 			// Hit Login Attempt
-			ResponseEntity<PasswordComplexityApiResponse<LoginAttemptData>> loginAttemptResponse = passwordComplexityService.attemptLogin(request.getUsername());
+//			ResponseEntity<PasswordComplexityApiResponse<LoginAttemptData>> loginAttemptResponse = passwordComplexityService.attemptLogin(request.getUsername());
+//
+//            if (loginAttemptResponse == null || loginAttemptResponse.getBody() == null) {
+//                return createLoginUserErrorResponse(
+//                        HttpStatus.INTERNAL_SERVER_ERROR.value(),
+//                        "no response from password service"
+//                );
+//            }
 
-            if (loginAttemptResponse == null || loginAttemptResponse.getBody() == null) {
-                return createLoginUserErrorResponse(
-                        HttpStatus.INTERNAL_SERVER_ERROR.value(),
-                        "no response from password service"
-                );
-            }
-
-			return createLoginUserErrorResponse(
+//			return createLoginUserErrorResponse(
+//					StaticValue.LOGIN_CODE_RESP_INCORRECT_PASSWORD,
+//                    StaticValue.LOGIN_MSG_RESP_INCORRECT_PASSWORD + " | " + loginAttemptResponse.getBody().getMessage()
+//			);
+            return createLoginUserErrorResponse(
 					StaticValue.LOGIN_CODE_RESP_INCORRECT_PASSWORD,
-                    StaticValue.LOGIN_MSG_RESP_INCORRECT_PASSWORD + " | " + loginAttemptResponse.getBody().getMessage()
+                    StaticValue.LOGIN_MSG_RESP_INCORRECT_PASSWORD
 			);
 		}
 
@@ -95,41 +99,41 @@ public class AuthUserService {
 		}
 
         // check blocked user
-        ResponseEntity<PasswordComplexityApiResponse<LockCheckData>> lockCheckResponse = passwordComplexityService.checkAccountLock(user.getUsername());
-
-        if (lockCheckResponse == null || lockCheckResponse.getBody() == null) {
-            return createLoginUserErrorResponse(
-                    HttpStatus.INTERNAL_SERVER_ERROR.value(),
-                    "no response from password service"
-            );
-        }
-
-        if (lockCheckResponse.getBody().getData().getIsBlokir()) {
-
-            DateTimeFormatter inputFmt = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm:ss");
-            DateTimeFormatter outputFmt = DateTimeFormatter.ofPattern("dd MMM yyyy, HH:mm", Locale.ENGLISH);
-            LocalDateTime dt = LocalDateTime.parse(lockCheckResponse.getBody().getData().getUnblockDate(), inputFmt);
-
-            String unblockDate = dt.format(outputFmt);
-            return createLoginUserErrorResponse(
-                    StaticValue.BLOCKED_ACCOUNT_CODE,
-                    StaticValue.BLOCKED_ACCOUNT_MSG + unblockDate
-            );
-        }
-
+//        ResponseEntity<PasswordComplexityApiResponse<LockCheckData>> lockCheckResponse = passwordComplexityService.checkAccountLock(user.getUsername());
+//
+//        if (lockCheckResponse == null || lockCheckResponse.getBody() == null) {
+//            return createLoginUserErrorResponse(
+//                    HttpStatus.INTERNAL_SERVER_ERROR.value(),
+//                    "no response from password service"
+//            );
+//        }
+//
+//        if (lockCheckResponse.getBody().getData().getIsBlokir()) {
+//
+//            DateTimeFormatter inputFmt = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm:ss");
+//            DateTimeFormatter outputFmt = DateTimeFormatter.ofPattern("dd MMM yyyy, HH:mm", Locale.ENGLISH);
+//            LocalDateTime dt = LocalDateTime.parse(lockCheckResponse.getBody().getData().getUnblockDate(), inputFmt);
+//
+//            String unblockDate = dt.format(outputFmt);
+//            return createLoginUserErrorResponse(
+//                    StaticValue.BLOCKED_ACCOUNT_CODE,
+//                    StaticValue.BLOCKED_ACCOUNT_MSG + unblockDate
+//            );
+//        }
+//
         // clear login attempt
-        ResponseEntity<PasswordComplexityApiResponse<LockCheckData>> clearLoginResponse = passwordComplexityService.clearLoginAttempt(user.getUsername());
-
-        if (clearLoginResponse == null || clearLoginResponse.getBody() == null) {
-            return createLoginUserErrorResponse(
-                    HttpStatus.INTERNAL_SERVER_ERROR.value(),
-                    "no response from password service"
-            );
-        }
-
-        if (clearLoginResponse.getStatusCodeValue() != 200) {
-            log.info("Clear login attempt status code {} | message: {}", clearLoginResponse.getStatusCodeValue(), clearLoginResponse.getBody().getMessage());
-        }
+//        ResponseEntity<PasswordComplexityApiResponse<LockCheckData>> clearLoginResponse = passwordComplexityService.clearLoginAttempt(user.getUsername());
+//
+//        if (clearLoginResponse == null || clearLoginResponse.getBody() == null) {
+//            return createLoginUserErrorResponse(
+//                    HttpStatus.INTERNAL_SERVER_ERROR.value(),
+//                    "no response from password service"
+//            );
+//        }
+//
+//        if (clearLoginResponse.getStatusCodeValue() != 200) {
+//            log.info("Clear login attempt status code {} | message: {}", clearLoginResponse.getStatusCodeValue(), clearLoginResponse.getBody().getMessage());
+//        }
 
 		JwtUtil jwt = new JwtUtil();
 		String token = jwt.generate(user, userRole);
