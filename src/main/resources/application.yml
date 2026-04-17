@@ -94,6 +94,10 @@ spring:
   batch:
     job:
       enabled: false
+  custom:
+    password-complexity-url: https://account-services-sandbox.msiglife.co.id/api
+    password-complexity-api-key: d9769ced1b8a4cd0ab59b55a306a007f
+    password-complexity-apptype: 111
 
 # Konfigurasi untuk profil prod
 ---
@@ -128,3 +132,7 @@ spring:
   batch:
     job:
       enabled: false
+  custom:
+    password-complexity-url: https://account-services.msiglife.co.id/api
+    password-complexity-api-key: 5989bf50ce384a708e0d81b1a26a1d6a
+    password-complexity-apptype: 111
