@@ -61,6 +61,16 @@ jasypt:
     password: polluxservice
     iv-generator-classname: org.jasypt.iv.NoIvGenerator
 
+http:
+  pool:
+    max-total: 200
+    default-max-per-route: 50
+    connect-timeout-ms: 10000
+    connection-request-timeout-ms: 5000
+    socket-timeout-ms: 20000
+    keep-alive-ms: 30000
+    idle-evict-seconds: 30
+
 # Konfigurasi untuk profil dev
 ---
 spring:
