@@ -112,4 +112,20 @@ public class AuthUserController {
 	}
 
 
+	@PostMapping(
+			path = "/api/auth/change-password",
+			produces = MediaType.APPLICATION_JSON_VALUE
+	)
+	public ResponseEntity<ChangePasswordResponse> changePassword(
+			HttpServletRequest httpRequest
+	) {
+		String authHeader = httpRequest.getHeader("Authorization");
+
+		ChangePasswordResponse response = authUserService.changePassword(authHeader);
+		if (response.getCode() == HttpStatus.OK.value()) {
+			return ResponseEntity.ok(response);
+		} else {
+			return ResponseEntity.status(response.getCode()).body(response);
+		}
+	}
 }

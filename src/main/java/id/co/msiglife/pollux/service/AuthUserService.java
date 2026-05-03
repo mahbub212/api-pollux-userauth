@@ -1,33 +1,36 @@
 package id.co.msiglife.pollux.service;
 
+import id.co.msiglife.pollux.dto.*;
+import id.co.msiglife.pollux.dto.passwordcomplexity.ChangePasswordData;
+import id.co.msiglife.pollux.dto.passwordcomplexity.LockCheckData;
+import id.co.msiglife.pollux.dto.passwordcomplexity.LoginAttemptData;
+import id.co.msiglife.pollux.dto.passwordcomplexity.PasswordComplexityApiResponse;
+import id.co.msiglife.pollux.entity.Menu;
+import id.co.msiglife.pollux.entity.PolluxRoleAccessMenu;
+import id.co.msiglife.pollux.entity.User;
+import id.co.msiglife.pollux.entity.UserRole;
+import id.co.msiglife.pollux.repository.MenuRepository;
+import id.co.msiglife.pollux.repository.RoleAccessMenuRepository;
+import id.co.msiglife.pollux.repository.UserRepository;
+import id.co.msiglife.pollux.repository.UserRoleRepository;
+import id.co.msiglife.pollux.util.JwtUtil;
+import id.co.msiglife.pollux.util.StaticValue;
+import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.stereotype.Service;
+
+import javax.sql.DataSource;
+import javax.transaction.Transactional;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.text.ParseException;
-import java.time.ZoneId;
-import java.time.ZonedDateTime;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.*;
-import java.util.function.Function;
 import java.util.stream.Collectors;
-import javax.persistence.Query;
-import javax.sql.DataSource;
-import javax.persistence.EntityManager;
-import javax.persistence.PersistenceContext;
-
-import id.co.msiglife.pollux.dto.*;
-import id.co.msiglife.pollux.entity.Menu;
-import id.co.msiglife.pollux.entity.PolluxRoleAccessMenu;
-import id.co.msiglife.pollux.repository.*;
-import lombok.RequiredArgsConstructor;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.http.HttpStatus;
-import org.springframework.stereotype.Service;
-import id.co.msiglife.pollux.entity.User;
-import id.co.msiglife.pollux.entity.UserRole;
-import id.co.msiglife.pollux.util.JwtUtil;
-import id.co.msiglife.pollux.util.StaticValue;
-import javax.transaction.Transactional;
 
 @Service
 @RequiredArgsConstructor
@@ -39,9 +42,7 @@ public class AuthUserService {
 	private final JwtUtil jwtUtil;
 	private final MenuRepository menuRepository;
 	private final RoleAccessMenuRepository roleAccessMenuRepository;
-	
-	@PersistenceContext
-	private EntityManager entityManager;
+	private final PasswordComplexityService passwordComplexityService;
 
 	@Value("${custom.timeout.alert}")
 	private int alertTimeoutInSeconds;
@@ -50,29 +51,85 @@ public class AuthUserService {
 	private int actualTimeoutInSeconds;
 
 	@Transactional
-	public LoginUserResponse login(LoginUserRequest request) throws ParseException {
+	public LoginUserResponse login(LoginUserRequest request) {
 		User user = userRepository.findByUsername(request.getUsername());
-		if (user != null) {
-			if (request.getPassword().equals(decryptPassword(user.getPassword()))) {
-				List<UserRole> userRole = userRoleRepository.findByLusIdWithRoleAccessList(user.getUserId());
-				if (userRole != null) {
-					JwtUtil jwt = new JwtUtil();
-					String token = jwt.generate(user, userRole);
-					if (isUserActive(user)) {
-						updateLussOnline(user);
-						return createLoginUserResponse(token, userRole, user);
-					} else {
-						return createLoginUserErrorResponse(StaticValue.LOGIN_CODE_RESP_INACTIVE, StaticValue.LOGIN_MSG_RESP_INACTIVE);
-					}
-				} else {
-					return createLoginUserErrorResponse(StaticValue.LOGIN_CODE_RESP_NOT_FOUND, StaticValue.LOGIN_MSG_RESP_NOT_FOUND + " in POLLUX");
-				}
-			} else {
-				return createLoginUserErrorResponse(StaticValue.LOGIN_CODE_RESP_INCORRECT_PASSWORD, StaticValue.LOGIN_MSG_RESP_INCORRECT_PASSWORD);
-			}
-		} else {
-			return createLoginUserErrorResponse(StaticValue.LOGIN_CODE_RESP_NOT_FOUND, StaticValue.LOGIN_MSG_RESP_NOT_FOUND);
+		if (user == null) {
+			return createLoginUserErrorResponse(
+					StaticValue.LOGIN_CODE_RESP_NOT_FOUND,
+					StaticValue.LOGIN_MSG_RESP_NOT_FOUND
+			);
 		}
+
+		if (!request.getPassword().equals(decryptPassword(user.getPassword()))) {
+			// Hit Login Attempt
+			ResponseEntity<PasswordComplexityApiResponse<LoginAttemptData>> loginAttemptResponse = passwordComplexityService.attemptLogin(request.getUsername());
+
+            if (loginAttemptResponse == null || loginAttemptResponse.getBody() == null) {
+                return createLoginUserErrorResponse(
+                        HttpStatus.INTERNAL_SERVER_ERROR.value(),
+                        "no response from password service"
+                );
+            }
+
+			return createLoginUserErrorResponse(
+					StaticValue.LOGIN_CODE_RESP_INCORRECT_PASSWORD,
+                    StaticValue.LOGIN_MSG_RESP_INCORRECT_PASSWORD + " | " + loginAttemptResponse.getBody().getMessage()
+			);
+		}
+
+		List<UserRole> userRole = userRoleRepository.findByLusIdWithRoleAccessList(user.getUserId());
+		if (userRole == null) {
+			return createLoginUserErrorResponse(
+					StaticValue.LOGIN_CODE_RESP_NOT_FOUND,
+					StaticValue.LOGIN_MSG_RESP_NOT_FOUND + " in POLLUX"
+			);
+		}
+
+		if (!isUserActive(user)) {
+			return createLoginUserErrorResponse(
+					StaticValue.LOGIN_CODE_RESP_INACTIVE,
+					StaticValue.LOGIN_MSG_RESP_INACTIVE
+			);
+		}
+
+        // check blocked user
+        ResponseEntity<PasswordComplexityApiResponse<LockCheckData>> lockCheckResponse = passwordComplexityService.checkAccountLock(user.getUsername());
+
+        if (lockCheckResponse == null || lockCheckResponse.getBody() == null) {
+            return createLoginUserErrorResponse(
+                    HttpStatus.INTERNAL_SERVER_ERROR.value(),
+                    "no response from password service"
+            );
+        }
+
+        if (lockCheckResponse.getBody().getData().getIsBlokir()) {
+
+            DateTimeFormatter inputFmt = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm:ss");
+            DateTimeFormatter outputFmt = DateTimeFormatter.ofPattern("dd MMM yyyy, HH:mm", Locale.ENGLISH);
+            LocalDateTime dt = LocalDateTime.parse(lockCheckResponse.getBody().getData().getUnblockDate(), inputFmt);
+
+            String unblockDate = dt.format(outputFmt);
+            return createLoginUserErrorResponse(
+                    StaticValue.BLOCKED_ACCOUNT_CODE,
+                    StaticValue.BLOCKED_ACCOUNT_MSG + unblockDate
+            );
+        }
+
+        // clear login attempt
+        ResponseEntity<PasswordComplexityApiResponse<LockCheckData>> clearLoginResponse = passwordComplexityService.clearLoginAttempt(user.getUsername());
+
+        if (clearLoginResponse == null || clearLoginResponse.getBody() == null) {
+            return createLoginUserErrorResponse(
+                    HttpStatus.INTERNAL_SERVER_ERROR.value(),
+                    "no response from password service"
+            );
+        }
+
+		JwtUtil jwt = new JwtUtil();
+		String token = jwt.generate(user, userRole);
+
+		updateLussOnline(user);
+		return createLoginUserResponse(token, userRole, user);
 	}
 
 
@@ -425,4 +482,61 @@ public class AuthUserService {
         return menu;
     }
 
+
+	@Transactional
+	public ChangePasswordResponse changePassword(String token) {
+
+		// validate input
+		if (token == null || token.isEmpty()) {
+			return ChangePasswordResponse.builder()
+					.code(HttpStatus.UNAUTHORIZED.value())
+					.message("Authorization token is missing or empty")
+					.build();
+		}
+
+		// Extract username from token
+		boolean isExpired = isTokenExpired(token);
+        if (isExpired) {
+            return ChangePasswordResponse.builder()
+                    .code(HttpStatus.UNAUTHORIZED.value())
+                    .message("Unauthorized or token expired")
+                    .build();
+        }
+		Long userId = jwtUtil.getAllClaimsFromToken(token).get("user_id", Long.class);
+		String username =  jwtUtil.getUsernameFromJwtToken(token);
+
+		User user = userRepository.findById(userId).orElse(null);
+		if (user == null) {
+			return ChangePasswordResponse.builder()
+					.code(HttpStatus.UNAUTHORIZED.value())
+					.message("User not found")
+					.build();
+		}
+
+		// CHANGE PASSWORD
+		ResponseEntity<PasswordComplexityApiResponse<ChangePasswordData>> changePasswordResponse = passwordComplexityService.changePassword(username);
+
+        if (changePasswordResponse == null || changePasswordResponse.getBody() == null) {
+            return ChangePasswordResponse.builder()
+                    .code(HttpStatus.INTERNAL_SERVER_ERROR.value())
+                    .message("no response from password service")
+                    .build();
+        }
+
+		if (changePasswordResponse.getBody().isError()) {
+			return ChangePasswordResponse.builder()
+					.code(changePasswordResponse.getStatusCodeValue())
+					.message(changePasswordResponse.getBody().getMessage())
+					.build();
+		}
+
+		HashMap<String, Object> dataResp = new HashMap<String, Object>();
+        dataResp.put("url", changePasswordResponse.getBody().getData().getUrl());
+
+        return ChangePasswordResponse.builder()
+                .code(HttpStatus.OK.value())
+                .message(changePasswordResponse.getBody().getMessage())
+				.data(dataResp)
+                .build();
+    }
 }
