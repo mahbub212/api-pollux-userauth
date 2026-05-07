@@ -113,6 +113,11 @@ spring:
     producer:
       key-serializer: org.apache.kafka.common.serialization.StringSerializer
       value-serializer: org.apache.kafka.common.serialization.StringSerializer
+      properties:
+        request.timeout.ms: 5000
+        delivery.timeout.ms: 5000
+        max.block.ms: 5000
+        retries: 0
 
 # Konfigurasi untuk profil prod
 ---
@@ -156,3 +161,8 @@ spring:
     producer:
       key-serializer: org.apache.kafka.common.serialization.StringSerializer
       value-serializer: org.apache.kafka.common.serialization.StringSerializer
+      properties:
+        request.timeout.ms: 5000
+        delivery.timeout.ms: 5000
+        max.block.ms: 5000
+        retries: 0
