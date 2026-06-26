@@ -16,7 +16,6 @@ import id.co.msiglife.pollux.repository.UserRoleRepository;
 import id.co.msiglife.pollux.util.JwtUtil;
 import id.co.msiglife.pollux.util.StaticValue;
 import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -35,7 +34,6 @@ import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
-@Slf4j
 public class AuthUserService {
 
 	private final DataSource dataSource;
@@ -46,11 +44,11 @@ public class AuthUserService {
 	private final RoleAccessMenuRepository roleAccessMenuRepository;
 	private final PasswordComplexityService passwordComplexityService;
 
-    @Value("${custom.timeout.alert}")
-    private int alertTimeoutInSeconds;
+	@Value("${custom.timeout.alert}")
+	private int alertTimeoutInSeconds;
 
-    @Value("${custom.timeout.actual}")
-    private int actualTimeoutInSeconds;
+	@Value("${custom.timeout.actual}")
+	private int actualTimeoutInSeconds;
 
 	@Transactional
 	public LoginUserResponse login(LoginUserRequest request) {
@@ -64,22 +62,18 @@ public class AuthUserService {
 
 		if (!request.getPassword().equals(decryptPassword(user.getPassword()))) {
 			// Hit Login Attempt
-//			ResponseEntity<PasswordComplexityApiResponse<LoginAttemptData>> loginAttemptResponse = passwordComplexityService.attemptLogin(request.getUsername());
-//
-//            if (loginAttemptResponse == null || loginAttemptResponse.getBody() == null) {
-//                return createLoginUserErrorResponse(
-//                        HttpStatus.INTERNAL_SERVER_ERROR.value(),
-//                        "no response from password service"
-//                );
-//            }
+			ResponseEntity<PasswordComplexityApiResponse<LoginAttemptData>> loginAttemptResponse = passwordComplexityService.attemptLogin(request.getUsername());
 
-//			return createLoginUserErrorResponse(
-//					StaticValue.LOGIN_CODE_RESP_INCORRECT_PASSWORD,
-//                    StaticValue.LOGIN_MSG_RESP_INCORRECT_PASSWORD + " | " + loginAttemptResponse.getBody().getMessage()
-//			);
-            return createLoginUserErrorResponse(
+            if (loginAttemptResponse == null || loginAttemptResponse.getBody() == null) {
+                return createLoginUserErrorResponse(
+                        HttpStatus.INTERNAL_SERVER_ERROR.value(),
+                        "no response from password service"
+                );
+            }
+
+			return createLoginUserErrorResponse(
 					StaticValue.LOGIN_CODE_RESP_INCORRECT_PASSWORD,
-                    StaticValue.LOGIN_MSG_RESP_INCORRECT_PASSWORD
+                    StaticValue.LOGIN_MSG_RESP_INCORRECT_PASSWORD + " | " + loginAttemptResponse.getBody().getMessage()
 			);
 		}
 
@@ -99,41 +93,37 @@ public class AuthUserService {
 		}
 
         // check blocked user
-//        ResponseEntity<PasswordComplexityApiResponse<LockCheckData>> lockCheckResponse = passwordComplexityService.checkAccountLock(user.getUsername());
-//
-//        if (lockCheckResponse == null || lockCheckResponse.getBody() == null) {
-//            return createLoginUserErrorResponse(
-//                    HttpStatus.INTERNAL_SERVER_ERROR.value(),
-//                    "no response from password service"
-//            );
-//        }
-//
-//        if (lockCheckResponse.getBody().getData().getIsBlokir()) {
-//
-//            DateTimeFormatter inputFmt = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm:ss");
-//            DateTimeFormatter outputFmt = DateTimeFormatter.ofPattern("dd MMM yyyy, HH:mm", Locale.ENGLISH);
-//            LocalDateTime dt = LocalDateTime.parse(lockCheckResponse.getBody().getData().getUnblockDate(), inputFmt);
-//
-//            String unblockDate = dt.format(outputFmt);
-//            return createLoginUserErrorResponse(
-//                    StaticValue.BLOCKED_ACCOUNT_CODE,
-//                    StaticValue.BLOCKED_ACCOUNT_MSG + unblockDate
-//            );
-//        }
-//
+        ResponseEntity<PasswordComplexityApiResponse<LockCheckData>> lockCheckResponse = passwordComplexityService.checkAccountLock(user.getUsername());
+
+        if (lockCheckResponse == null || lockCheckResponse.getBody() == null) {
+            return createLoginUserErrorResponse(
+                    HttpStatus.INTERNAL_SERVER_ERROR.value(),
+                    "no response from password service"
+            );
+        }
+
+        if (lockCheckResponse.getBody().getData().getIsBlokir()) {
+
+            DateTimeFormatter inputFmt = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm:ss");
+            DateTimeFormatter outputFmt = DateTimeFormatter.ofPattern("dd MMM yyyy, HH:mm", Locale.ENGLISH);
+            LocalDateTime dt = LocalDateTime.parse(lockCheckResponse.getBody().getData().getUnblockDate(), inputFmt);
+
+            String unblockDate = dt.format(outputFmt);
+            return createLoginUserErrorResponse(
+                    StaticValue.BLOCKED_ACCOUNT_CODE,
+                    StaticValue.BLOCKED_ACCOUNT_MSG + unblockDate
+            );
+        }
+
         // clear login attempt
-//        ResponseEntity<PasswordComplexityApiResponse<LockCheckData>> clearLoginResponse = passwordComplexityService.clearLoginAttempt(user.getUsername());
-//
-//        if (clearLoginResponse == null || clearLoginResponse.getBody() == null) {
-//            return createLoginUserErrorResponse(
-//                    HttpStatus.INTERNAL_SERVER_ERROR.value(),
-//                    "no response from password service"
-//            );
-//        }
-//
-//        if (clearLoginResponse.getStatusCodeValue() != 200) {
-//            log.info("Clear login attempt status code {} | message: {}", clearLoginResponse.getStatusCodeValue(), clearLoginResponse.getBody().getMessage());
-//        }
+        ResponseEntity<PasswordComplexityApiResponse<LockCheckData>> clearLoginResponse = passwordComplexityService.clearLoginAttempt(user.getUsername());
+
+        if (clearLoginResponse == null || clearLoginResponse.getBody() == null) {
+            return createLoginUserErrorResponse(
+                    HttpStatus.INTERNAL_SERVER_ERROR.value(),
+                    "no response from password service"
+            );
+        }
 
 		JwtUtil jwt = new JwtUtil();
 		String token = jwt.generate(user, userRole);
@@ -143,285 +133,283 @@ public class AuthUserService {
 	}
 
 
-    @Transactional
-    public LogoutUserResponse logout(String authToken) throws Exception {
-        if (authToken == null || authToken.isEmpty()) {
-            return createLogoutUserErrorResponse(HttpStatus.UNAUTHORIZED.value(), "Authorization token is missing or empty");
-        }
+	@Transactional
+	public LogoutUserResponse logout(String authToken) throws Exception {
+		if (authToken == null || authToken.isEmpty()) {
+			return createLogoutUserErrorResponse(HttpStatus.UNAUTHORIZED.value(), "Authorization token is missing or empty");
+		}
 
-        String username = jwtUtil.getUsernameFromJwtToken(authToken);
-        User user = userRepository.findByUsername(username);
-        if(user != null) {
-            // commented for login lus active keep deactivating issue - 16-01-2025
+		String username = jwtUtil.getUsernameFromJwtToken(authToken);
+		User user = userRepository.findByUsername(username);
+		if(user != null) {
+			// commented for login lus active keep deactivating issue - 16-01-2025
 //			updateLusNonActive(user);
 //			updateNullLussOnline(user);
-            return createLogoutUserResponse(user);
-        } else {
-//            throw new NotFoundException(StaticValue.LOGIN_MSG_RESP_NOT_FOUND, WorkFlowProcessIdStaticValue.LOGOUT_PROCESS_ID);
-            return createLogoutUserErrorResponse(StaticValue.LOGIN_CODE_RESP_NOT_FOUND, StaticValue.LOGIN_MSG_RESP_NOT_FOUND);
-        }
-    }
+			return createLogoutUserResponse(user);
+		} else {
+			return createLogoutUserErrorResponse(StaticValue.LOGIN_CODE_RESP_NOT_FOUND, StaticValue.LOGIN_MSG_RESP_NOT_FOUND);
+		}
+	}
+	
+	@Transactional
+	public void updateNullLussOnline(User user) {
+		try {
+			user.setLussOnline(null);
+			userRepository.save(user);
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+	}
+	
+	@Transactional
+	public void updateLusNonActive(User user) {
+		try {
+			user.setLusNonActive(new Date());
+			userRepository.save(user);
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+	}
 
-    @Transactional
-    public void updateNullLussOnline(User user) {
-        try {
-            user.setLussOnline(null);
-            userRepository.save(user);
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-    }
+	@Transactional
+	public void updateLussOnline(User user) {
+		try {
+			user.setLussOnline(new Date());
+			userRepository.save(user);
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+	}
+	
+	// Validasi status user active 
+	private boolean isUserActive(User user) {
+		boolean isActive = false;
+		if(user.getActive() == 1) isActive = true;
+		return isActive;
+	}
 
-    @Transactional
-    public void updateLusNonActive(User user) {
-        try {
-            user.setLusNonActive(new Date());
-            userRepository.save(user);
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-    }
+	private String encryptPassword(String password) {
+		String encryptedPassword = null;
+		Connection connection = null;
+		PreparedStatement statement = null;
 
-    @Transactional
-    public void updateLussOnline(User user) {
-        try {
-            user.setLussOnline(new Date());
-            userRepository.save(user);
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-    }
+		try {
+			connection = dataSource.getConnection();
 
-    // Validasi status user active
-    private boolean isUserActive(User user) {
-        boolean isActive = false;
-        if(user.getActive() == 1) isActive = true;
-        return isActive;
-    }
+			String sql = "SELECT EKA.ENCRYPT(?) AS encrypted_password FROM DUAL";
+			statement = connection.prepareStatement(sql);
+			statement.setString(1, password);
+			ResultSet resultSet = statement.executeQuery();
 
-    private String encryptPassword(String password) {
-        String encryptedPassword = null;
-        Connection connection = null;
-        PreparedStatement statement = null;
+			if (resultSet.next()) {
+				encryptedPassword = resultSet.getString("encrypted_password");
+			}
+		} catch (SQLException e) {
+			e.printStackTrace();
+		} finally {
+			try {
+				if (statement != null) {
+					statement.close();
+				}
+				if (connection != null) {
+					connection.close();
+				}
+			} catch (SQLException e) {
+				e.printStackTrace();
+			}
+		}
+		return encryptedPassword;
+	}
 
-        try {
-            connection = dataSource.getConnection();
+	private String decryptPassword(String encryptedPassword) {
+		String decryptedPassword = null;
+		Connection connection = null;
+		PreparedStatement statement = null;
 
-            String sql = "SELECT EKA.ENCRYPT(?) AS encrypted_password FROM DUAL";
-            statement = connection.prepareStatement(sql);
-            statement.setString(1, password);
-            ResultSet resultSet = statement.executeQuery();
+		try {
+			connection = dataSource.getConnection();
 
-            if (resultSet.next()) {
-                encryptedPassword = resultSet.getString("encrypted_password");
-            }
-        } catch (SQLException e) {
-            e.printStackTrace();
-        } finally {
-            try {
-                if (statement != null) {
-                    statement.close();
-                }
-                if (connection != null) {
-                    connection.close();
-                }
-            } catch (SQLException e) {
-                e.printStackTrace();
-            }
-        }
-        return encryptedPassword;
-    }
+			String sql = "SELECT EKA.DECRYPT(?) AS decrypted_password FROM DUAL";
+			statement = connection.prepareStatement(sql);
+			statement.setString(1, encryptedPassword);
+			ResultSet resultSet = statement.executeQuery();
 
-    private String decryptPassword(String encryptedPassword) {
-        String decryptedPassword = null;
-        Connection connection = null;
-        PreparedStatement statement = null;
+			if (resultSet.next()) {
+				decryptedPassword = resultSet.getString("decrypted_password");
+			}
+		} catch (SQLException e) {
+			e.printStackTrace();
+		} finally {
+			try {
+				if (statement != null) {
+					statement.close();
+				}
+				if (connection != null) {
+					connection.close();
+				}
+			} catch (SQLException e) {
+				e.printStackTrace();
+			}
+		}
+		return decryptedPassword;
+	}
 
-        try {
-            connection = dataSource.getConnection();
+	public boolean isTokenExpired(String token) {
+		return jwtUtil.isTokenExpired(token);
+	}
 
-            String sql = "SELECT EKA.DECRYPT(?) AS decrypted_password FROM DUAL";
-            statement = connection.prepareStatement(sql);
-            statement.setString(1, encryptedPassword);
-            ResultSet resultSet = statement.executeQuery();
+	// RESPONSE LOGIN USER 
+	private LoginUserResponse createLoginUserResponse(String token, List<UserRole> userRoles, User user) {
+		HashMap<String, Object> dataResp = new HashMap<String, Object>();
+		dataResp.put("token", token);
+		dataResp.put("is_expired", false);
+		dataResp.put("is_first_login", false);
+		dataResp.put("expired_at", jwtUtil.getExpirationDateFromToken(token).getTime());
+		//dataResp.put("role_id", userRole.getRoleId());
+		List<Integer> roleIds = userRoles.stream()
+				.map(UserRole::getRoleId)
+				.collect(Collectors.toList());
+		dataResp.put("role_id", roleIds);
+		dataResp.put("full_name", user.getLusFullName());
+		dataResp.put("user_id", user.getUserId());
+		dataResp.put("list_menu_access", getMenuTreeByRoles(roleIds));
+		
+		return LoginUserResponse.builder()
+				.code(HttpStatus.OK.value())
+				.message("Login Success")
+				.data(dataResp)
+				.build();
+	}
+	
+	private LoginUserResponse createLoginUserErrorResponse(int code, String message) {
+		return LoginUserResponse.builder()
+				.code(code)
+				.message(message)
+				.build();
+	}	
+	// END RESPONSE LOGIN USER
+	
+	// RESPONSE LOGOUT USER
+		private LogoutUserResponse createLogoutUserResponse(User user) {
+			HashMap<String, Object> dataResp = new HashMap<String, Object>();
+			dataResp.put("user_id", user.getUserId());
+			
+			return LogoutUserResponse.builder()
+					.code(HttpStatus.OK.value())
+					.message("Logout Success")
+					.data(dataResp)
+					.build();
+		}
+		
+		private LogoutUserResponse createLogoutUserErrorResponse(int code, String message) {
+			return LogoutUserResponse.builder()
+					.code(code)
+					.message(message)
+					.build();
+		}
+	// END RESPONSE LOGOUT USER
 
-            if (resultSet.next()) {
-                decryptedPassword = resultSet.getString("decrypted_password");
-            }
-        } catch (SQLException e) {
-            e.printStackTrace();
-        } finally {
-            try {
-                if (statement != null) {
-                    statement.close();
-                }
-                if (connection != null) {
-                    connection.close();
-                }
-            } catch (SQLException e) {
-                e.printStackTrace();
-            }
-        }
-        return decryptedPassword;
-    }
+	public TokenCheckResponseDTO checkToken(String token) {
+		boolean isExpired = isTokenExpired(token);
+		String fullname = jwtUtil.getFullnameFromJwtToken(token);
+		Long expiredAt = jwtUtil.getExpirationDateFromToken(token).getTime();
+		Long userId = jwtUtil.getAllClaimsFromToken(token).get("user_id", Long.class);
+		List<Integer> roleId = null;
+		List<MenuTreeDto> menuTreeDtos = null;
 
-    public boolean isTokenExpired(String token) {
-        return jwtUtil.isTokenExpired(token);
-    }
+		if (!isExpired) {
+			roleId = jwtUtil.getRoleIdFromJwtToken(token);
+			menuTreeDtos = getMenuTreeByRoles(roleId);
+		}
 
-    // RESPONSE LOGIN USER
-    private LoginUserResponse createLoginUserResponse(String token, List<UserRole> userRoles, User user) {
-        HashMap<String, Object> dataResp = new HashMap<String, Object>();
-        dataResp.put("token", token);
-        dataResp.put("is_expired", false);
-        dataResp.put("is_first_login", false);
-        dataResp.put("expired_at", jwtUtil.getExpirationDateFromToken(token).getTime());
-        //dataResp.put("role_id", userRole.getRoleId());
-        List<Integer> roleIds = userRoles.stream()
-                .map(UserRole::getRoleId)
-                .collect(Collectors.toList());
-        dataResp.put("role_id", roleIds);
-        dataResp.put("full_name", user.getLusFullName());
-        dataResp.put("user_id", user.getUserId());
-        dataResp.put("list_menu_access", getMenuTreeByRoles(roleIds));
+		TokenDataDTO tokenData = TokenDataDTO.builder()
+				.isFirstLogin(false)
+				.isExpired(isExpired)
+				.roleId(roleId)
+				.fullName(fullname)
+				.expiredAt(expiredAt)
+				.userId(userId)
+				.token(token)
+				.menuTreeDtos(menuTreeDtos)
+				.build();
 
-        return LoginUserResponse.builder()
-                .code(HttpStatus.OK.value())
-                .message("Login Success")
-                .data(dataResp)
-                .build();
-    }
+		TokenCheckResponseDTO responseDTO = TokenCheckResponseDTO.builder()
+				.code(HttpStatus.OK.value())
+				.message("Token check success")
+				.data(tokenData)
+				.build();
 
-    private LoginUserResponse createLoginUserErrorResponse(int code, String message) {
-        return LoginUserResponse.builder()
-                .code(code)
-                .message(message)
-                .build();
-    }
-    // END RESPONSE LOGIN USER
+		return responseDTO;
+	}
 
-    // RESPONSE LOGOUT USER
-    private LogoutUserResponse createLogoutUserResponse(User user) {
-        HashMap<String, Object> dataResp = new HashMap<String, Object>();
-        dataResp.put("user_id", user.getUserId());
+	public TimeoutDTO getTimeoutValues() {
+		return new TimeoutDTO(alertTimeoutInSeconds, actualTimeoutInSeconds);
+	}
 
-        return LogoutUserResponse.builder()
-                .code(HttpStatus.OK.value())
-                .message("Logout Success")
-                .data(dataResp)
-                .build();
-    }
+	public CheckRoleResponse checkRoleAccess(CheckRoleRequest request) {
 
-    private LogoutUserResponse createLogoutUserErrorResponse(int code, String message) {
-        return LogoutUserResponse.builder()
-                .code(code)
-                .message(message)
-                .build();
-    }
-    // END RESPONSE LOGOUT USER
+		List<Integer> roleId = request.getRoleId();
 
-    public TokenCheckResponseDTO checkToken(String token) {
-        boolean isExpired = isTokenExpired(token);
-        String fullname = jwtUtil.getFullnameFromJwtToken(token);
-        Long expiredAt = jwtUtil.getExpirationDateFromToken(token).getTime();
-        Long userId = jwtUtil.getAllClaimsFromToken(token).get("user_id", Long.class);
-        List<Integer> roleId = null;
-        List<MenuTreeDto> menuTreeDtos = null;
+		List<PolluxRoleAccessMenu> roleAccessMenu = roleAccessMenuRepository.getRoleAccessMenu(roleId);
 
-        if (!isExpired) {
-            roleId = jwtUtil.getRoleIdFromJwtToken(token);
-            menuTreeDtos = getMenuTreeByRoles(roleId);
-        }
+		if(roleAccessMenu.size() > 0) {
+			List<HashMap<String, Object>> menuList = new ArrayList<HashMap<String,Object>>();
+			HashMap<String, Object> menuMap;
+			HashMap<String, Object> actionMap;
 
-        TokenDataDTO tokenData = TokenDataDTO.builder()
-                .isFirstLogin(false)
-                .isExpired(isExpired)
-                .roleId(roleId)
-                .fullName(fullname)
-                .expiredAt(expiredAt)
-                .userId(userId)
-                .token(token)
-                .menuTreeDtos(menuTreeDtos)
-                .build();
+			for(PolluxRoleAccessMenu role : roleAccessMenu) {
+				actionMap = new HashMap<String, Object>();
+				actionMap.put("update", convertFlagValue(role.getUpdated()));
+				actionMap.put("view", convertFlagValue(role.getView()));
+				actionMap.put("add", convertFlagValue(role.getAdd()));
+				actionMap.put("delete", convertFlagValue(role.getDelete()));
+				actionMap.put("edit", convertFlagValue(role.getEdit()));
+				actionMap.put("download", convertFlagValue(role.getDownload()));
+				actionMap.put("approve", convertFlagValue(role.getApprove()));
+				actionMap.put("change", convertFlagValue(role.getChange()));
 
-        TokenCheckResponseDTO responseDTO = TokenCheckResponseDTO.builder()
-                .code(HttpStatus.OK.value())
-                .message("Token check success")
-                .data(tokenData)
-                .build();
+				System.out.println("//menu id : "+role.getMenuId());
 
-        return responseDTO;
-    }
+				Menu menu = menuRepository.findByMenuId(role.getMenuId().longValue());
+				menuMap = new HashMap<String, Object>();
+				menuMap.put("menu_id", role.getMenuId());
+				menuMap.put("menu_name", menu.getNamaMenu());
+				menuMap.put("is_enable", convertFlagValue(role.getFlag()));
+				menuMap.put("actions",actionMap);
+				menuList.add(menuMap);
+			}
+			return createCheckRoleAccessResponse(StaticValue.CHECK_ROLE_CODE_RESP_SUCCESS, StaticValue.CHECK_ROLE_MSG_RESP_SUCCESS, menuList, roleId);
+		} else {
+			return createCheckRoleAccessErrorResponse(StaticValue.CHECK_ROLE_CODE_RESP_NOT_FOUND, StaticValue.CHECK_ROLE_MSG_RESP_NOT_FOUND, roleId);
+		}
+	}
 
-    public TimeoutDTO getTimeoutValues() {
-        return new TimeoutDTO(alertTimeoutInSeconds, actualTimeoutInSeconds);
-    }
+	// RESPONSE CHECK ROLE ACCESS LIST
+	private CheckRoleResponse createCheckRoleAccessResponse(int code, String message, List<HashMap<String, Object>> menuList, List<Integer> roleId) {
+		return CheckRoleResponse.builder()
+				.code(code)
+				.message(message)
+				.data(menuList)
+				.roleId(roleId)
+				.build();
+	}
 
-    public CheckRoleResponse checkRoleAccess(CheckRoleRequest request) {
+	private CheckRoleResponse createCheckRoleAccessErrorResponse(int code, String message, List<Integer> roleId) {
+		return CheckRoleResponse.builder()
+				.code(code)
+				.message(message)
+				.roleId(roleId)
+				.build();
+	}
+	// END RESPONSE CHECK ROLE ACCESS LIST
 
-        List<Integer> roleId = request.getRoleId();
-
-        List<PolluxRoleAccessMenu> roleAccessMenu = roleAccessMenuRepository.getRoleAccessMenu(roleId);
-
-        if(roleAccessMenu.size() > 0) {
-            List<HashMap<String, Object>> menuList = new ArrayList<HashMap<String,Object>>();
-            HashMap<String, Object> menuMap;
-            HashMap<String, Object> actionMap;
-
-            for(PolluxRoleAccessMenu role : roleAccessMenu) {
-                actionMap = new HashMap<String, Object>();
-                actionMap.put("update", convertFlagValue(role.getUpdated()));
-                actionMap.put("view", convertFlagValue(role.getView()));
-                actionMap.put("add", convertFlagValue(role.getAdd()));
-                actionMap.put("delete", convertFlagValue(role.getDelete()));
-                actionMap.put("edit", convertFlagValue(role.getEdit()));
-                actionMap.put("download", convertFlagValue(role.getDownload()));
-                actionMap.put("approve", convertFlagValue(role.getApprove()));
-                actionMap.put("change", convertFlagValue(role.getChange()));
-
-                System.out.println("//menu id : "+role.getMenuId());
-
-                Menu menu = menuRepository.findByMenuId(role.getMenuId().longValue());
-                menuMap = new HashMap<String, Object>();
-                menuMap.put("menu_id", role.getMenuId());
-                menuMap.put("menu_name", menu.getNamaMenu());
-                menuMap.put("is_enable", convertFlagValue(role.getFlag()));
-                menuMap.put("actions",actionMap);
-                menuList.add(menuMap);
-            }
-            return createCheckRoleAccessResponse(StaticValue.CHECK_ROLE_CODE_RESP_SUCCESS, StaticValue.CHECK_ROLE_MSG_RESP_SUCCESS, menuList, roleId);
-        } else {
-//            throw new NotFoundException(StaticValue.CHECK_ROLE_MSG_RESP_NOT_FOUND, WorkFlowProcessIdStaticValue.CHECK_ROLE_PROCESS_ID);
-            return createCheckRoleAccessErrorResponse(StaticValue.CHECK_ROLE_CODE_RESP_NOT_FOUND, StaticValue.CHECK_ROLE_MSG_RESP_NOT_FOUND, roleId);
-        }
-    }
-
-    // RESPONSE CHECK ROLE ACCESS LIST
-    private CheckRoleResponse createCheckRoleAccessResponse(int code, String message, List<HashMap<String, Object>> menuList, List<Integer> roleId) {
-        return CheckRoleResponse.builder()
-                .code(code)
-                .message(message)
-                .data(menuList)
-                .roleId(roleId)
-                .build();
-    }
-
-    private CheckRoleResponse createCheckRoleAccessErrorResponse(int code, String message, List<Integer> roleId) {
-        return CheckRoleResponse.builder()
-                .code(code)
-                .message(message)
-                .roleId(roleId)
-                .build();
-    }
-    // END RESPONSE CHECK ROLE ACCESS LIST
-
-    private Boolean convertFlagValue(Integer value) {
-        if (value != null) {
-            return value == 1;
-        } else {
-            return false;
-        }
-    }
+	private Boolean convertFlagValue(Integer value) {
+		if (value != null) {
+			return value == 1;
+		} else {
+			return false;
+		}
+	}
 
 	public List<MenuTreeDto> getMenuTreeByRoles(List<Integer> request) {
 		List<Map<String, Object>> rows = menuRepository.findMenuTreeByRoles(request);

@@ -122,3 +122,4 @@ public class OutboundLoggingInterceptor implements ClientHttpRequestInterceptor 
                 || Objects.equals(mediaType, MimeTypeUtils.APPLICATION_XML);
     }
 }
+

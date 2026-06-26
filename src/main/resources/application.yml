@@ -126,16 +126,16 @@ spring:
     activate:
       on-profile: prod
   datasource:
-    url: jdbc:oracle:thin:@128.21.22.31:1530:ajsdb
+    url: jdbc:oracle:thin:@129.21.1.13:1526:ajsdb
     username: dev
     password: ENC(c1Hxqs/EVX7QSV9a6z2j0g==)
     driver-class-name: oracle.jdbc.driver.OracleDriver
     hikari:
       auto-commit: true
       idle-timeout: 10000
-      maximum-pool-size: 5
+      maximum-pool-size: 15
       max-lifetime: 30000
-      minimum-idle: 1
+      minimum-idle: 10
       connection-timeout: 30000
   jpa:
     hibernate:

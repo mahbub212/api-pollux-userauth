@@ -19,7 +19,7 @@ import java.util.concurrent.TimeUnit;
 
 @Configuration
 public class RestTemplateConfig {
-    
+
     @Value("${http.pool.max-total:200}")
     private int maxTotal;
 
