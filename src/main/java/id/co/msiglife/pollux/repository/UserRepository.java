@@ -6,5 +6,5 @@ import id.co.msiglife.pollux.entity.User;
 
 @Repository
 public interface UserRepository extends JpaRepository<User, Long> {
-	User findByUsername(String username);
+	User findByUsernameAndActive(String username, Integer active);
 }
