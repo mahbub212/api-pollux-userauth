@@ -52,7 +52,7 @@ public class AuthUserService {
 
 	@Transactional
 	public LoginUserResponse login(LoginUserRequest request) {
-		User user = userRepository.findByUsername(request.getUsername());
+		User user = userRepository.findByUsernameAndActive(request.getUsername(), 1);
 		if (user == null) {
 			return createLoginUserErrorResponse(
 					StaticValue.LOGIN_CODE_RESP_NOT_FOUND,
@@ -140,7 +140,7 @@ public class AuthUserService {
 		}
 
 		String username = jwtUtil.getUsernameFromJwtToken(authToken);
-		User user = userRepository.findByUsername(username);
+		User user = userRepository.findByUsernameAndActive(username, 1);
 		if(user != null) {
 			// commented for login lus active keep deactivating issue - 16-01-2025
 //			updateLusNonActive(user);
